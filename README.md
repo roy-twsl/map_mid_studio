@@ -123,7 +123,7 @@ Output Rules:
 
 ### Author
 - GitHub: [Roy](https://github.com/roy-twsl)
-- Project Repository: [Mind Map Studio](https://github.com/roy-twsl/mindmap-studio)
+- Project Repository: [Mind Map Studio](https://github.com/roy-twsl/map_mid_studio)
 
 ---
 
@@ -235,7 +235,7 @@ Output Rules:
 
 ### توسعه‌دهنده
 - گیت‌هاب: [Roy](https://github.com/roy-twsl)
-- مخزن پروژه در گیت‌هاب: [Mind Map Studio](https://github.com/roy-twsl/mindmap-studio)
+- مخزن پروژه در گیت‌هاب: [Mind Map Studio](https://github.com/roy-twsl/map_mid_studio)
 
 ---
 
