@@ -37,6 +37,9 @@
       --panel-bg: #ffffff;
       --panel-border: #e4e4e7;
       --primary-accent: #0284c7;
+      --root-bg: #ffffff;
+      --root-border: #0ea5e9;
+      --root-shadow: rgba(14, 165, 233, 0.15);
     }
 
     .dark {
@@ -50,6 +53,9 @@
       --panel-bg: #18181b;
       --panel-border: #27272a;
       --primary-accent: #38bdf8;
+      --root-bg: #1e293b;
+      --root-border: #38bdf8;
+      --root-shadow: rgba(56, 189, 248, 0.25);
     }
 
     /* Main application body viewport */
@@ -83,7 +89,7 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
-    /* Minimalist interactive node card */
+    /* Interactive node card */
     .mind-node {
       background-color: var(--node-bg);
       border: 1.5px solid var(--node-border);
@@ -101,6 +107,11 @@
       min-width: 160px;
       max-width: 280px;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .mind-node.single-line-mode {
+      max-width: none !important;
+      white-space: nowrap !important;
     }
 
     .mind-node:active {
@@ -122,8 +133,21 @@
       box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.3) !important;
     }
 
+    /* Distinct root node styling */
     .mind-node.root-node {
-      border-width: 2px !important;
+      background-color: var(--root-bg);
+      border: 2.5px solid var(--root-border) !important;
+      box-shadow: 0 8px 24px var(--root-shadow) !important;
+      border-radius: 18px;
+      padding: 18px 24px;
+      min-width: 180px;
+      max-width: 320px;
+    }
+
+    .mind-node.root-node .node-text-content {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
     }
 
     /* Bi-directional, strictly oriented node text */
@@ -138,6 +162,11 @@
       font-weight: 600;
       line-height: 1.45;
       width: 100%;
+    }
+
+    .single-line-mode .node-text-content {
+      white-space: nowrap !important;
+      word-break: normal !important;
     }
 
     .node-text-content:empty:before {
@@ -290,6 +319,12 @@
         <input type="file" accept=".pmm,.json" class="hidden" onchange="loadProjectFile(event)">
       </label>
 
+      <!-- AI Importer Button -->
+      <button class="btn" onclick="openAiImportModal()" style="background: rgba(14, 165, 233, 0.1); color: #0284c7;" title="Generate from AI / Text Outline">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="7.5 4.21 12 6.81 16.5 4.21"/><polyline points="7.5 19.79 7.5 14.6 3 12"/><polyline points="21 12 16.5 14.6 16.5 19.79"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <span id="btn-ai-import">AI</span>
+      </button>
+
       <div class="divider-v"></div>
 
       <!-- Undo -->
@@ -333,7 +368,7 @@
       </button>
 
       <!-- Auto Balance & Center -->
-      <button class="btn-icon" onclick="autoLayoutBalancedTree()" title="Auto Balance & Center (Sparkles)">
+      <button class="btn-icon" onclick="autoLayoutBalancedTree(); fitViewToMap();" title="Auto Balance & Fit View">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
       </button>
 
@@ -352,7 +387,7 @@
       </button>
     </div>
 
-    <!-- Right Controls: Info, Language, Shortcuts, Theme (Default Light), Zoom -->
+    <!-- Right Controls -->
     <div class="panel-box" style="pointer-events: auto; padding: 6px 8px; gap: 4px;">
       <button class="btn-icon" onclick="openFontInfoModal()" title="Local Privacy & Fonts">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
@@ -369,7 +404,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>
       </button>
 
-      <!-- Theme Switcher (Starts with Moon icon in Light Mode) -->
+      <!-- Theme Switcher -->
       <button class="btn-icon" onclick="toggleTheme()" title="Toggle Dark / Light Theme (Ctrl+D)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
@@ -383,14 +418,14 @@
       <button class="btn-icon" onclick="zoomOut()" title="Zoom Out">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
       </button>
-      <button class="btn-icon" onclick="resetZoom()" title="Reset to Center View">
+      <button class="btn-icon" onclick="fitViewToMap()" title="Fit View to Map">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
       </button>
     </div>
   </header>
 
   <!-- =========================================================================
-       MAIN INTERACTIVE CANVAS (INFINITE VIEWPORT WITH PAN & ZOOM)
+       MAIN INTERACTIVE CANVAS
        ========================================================================= -->
   <main id="viewport" style="flex: 1; width: 100%; height: 100%; position: relative; cursor: grab; overflow: hidden;">
     <div id="canvas" style="position: absolute; inset: 0; transform-origin: 0 0;">
@@ -400,12 +435,16 @@
   </main>
 
   <!-- =========================================================================
-       CUSTOM NODE CONTEXT MENU (OPENS ON RIGHT-CLICKING A NODE)
+       CUSTOM NODE CONTEXT MENU
        ========================================================================= -->
-  <div id="node-context-menu" class="hidden" style="position: fixed; z-index: 1000; width: 190px; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); padding: 6px; display: flex; flex-direction: column; gap: 2px;">
+  <div id="node-context-menu" class="hidden" style="position: fixed; z-index: 1000; width: 200px; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); padding: 6px; display: flex; flex-direction: column; gap: 2px;">
     <div class="context-menu-item" onclick="contextAction('edit')">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       <span id="ctx-edit">Edit Text</span>
+    </div>
+    <div class="context-menu-item" onclick="contextAction('toggle-single-line')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+      <span id="ctx-line-mode">Single / Multi Line</span>
     </div>
     <div class="context-menu-item" onclick="contextAction('add-child')">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -440,7 +479,7 @@
   <!-- =========================================================================
        SELECTED NODE FLOATING INSPECTOR
        ========================================================================= -->
-  <div id="node-inspector" class="panel-box hidden" style="position: absolute; bottom: 24px; left: 0; right: 0; margin: auto; width: fit-content; z-index: 40; padding: 8px 14px; gap: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+  <div id="node-inspector" class="panel-box hidden" style="position: absolute; bottom: 24px; left: 0; right: 0; margin: auto; width: fit-content; z-index: 40; padding: 8px 14px; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
     <div style="display: flex; align-items: center; gap: 6px;">
       <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;" id="lbl-color">Color:</span>
       <div style="display: flex; align-items: center; gap: 4px;">
@@ -457,7 +496,13 @@
 
     <button class="btn" onclick="startEditingNode(state.selectedNodeId)">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-      <span id="btn-edit-text">Edit (Enter)</span>
+      <span id="btn-edit-text">Edit</span>
+    </button>
+
+    <!-- Toggle Single-Line / Multi-Line Mode Button -->
+    <button class="btn" onclick="toggleNodeSingleLine(state.selectedNodeId)" title="Toggle Single-Line / Multi-Line Wrapping">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+      <span id="btn-toggle-line-mode">Single Line</span>
     </button>
 
     <button class="btn" onclick="openIconModal()" title="Add Icon (Ctrl+I)">
@@ -480,7 +525,46 @@
   </div>
 
   <!-- =========================================================================
-       NODE DELETION CONFIRMATION DIALOG (FOR NODES WITH CHILDREN)
+       STRUCTURED JSON & AI OUTLINE IMPORTER MODAL
+       ========================================================================= -->
+  <div id="ai-import-modal" class="hidden" style="position: fixed; inset: 0; z-index: 850; background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; padding: 16px;">
+    <div class="panel-box" style="width: 100%; max-width: 620px; max-height: 92vh; flex-direction: column; padding: 22px; gap: 14px; border-radius: 16px;">
+      <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--panel-border); padding-bottom: 12px;">
+        <h3 style="font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="7.5 4.21 12 6.81 16.5 4.21"/><polyline points="7.5 19.79 7.5 14.6 3 12"/><polyline points="21 12 16.5 14.6 16.5 19.79"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <span id="txt-ai-modal-title">AI & Structured JSON Importer</span>
+        </h3>
+        <button class="btn-icon" onclick="closeAiImportModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+
+      <!-- Quick AI Prompt Copy Card -->
+      <div style="width: 100%; background: rgba(14,165,233,0.06); border: 1px dashed rgba(14,165,233,0.35); border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="font-size: 11px; line-height: 1.4; color: var(--text-main);">
+          <strong id="lbl-prompt-title">Prompt Template for ChatGPT / Claude:</strong>
+          <p style="color: var(--text-muted); font-size: 10px; margin-top: 2px;" id="lbl-prompt-desc">Click below to copy the prompt, send it with your article/book text to AI, then paste the resulting JSON here.</p>
+        </div>
+        <button class="btn btn-primary" onclick="copyAiPromptTemplate()" style="padding: 6px 12px; font-size: 11px; white-space: nowrap;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span id="txt-copy-prompt">Copy AI Prompt</span>
+        </button>
+      </div>
+
+      <!-- Textarea for JSON/Markdown Input -->
+      <textarea id="ai-markdown-input" style="width: 100%; height: 200px; padding: 12px; font-size: 12px; font-family: monospace; border-radius: 10px; border: 1px solid var(--panel-border); background: var(--bg-canvas); color: var(--text-main); outline: none; resize: vertical; line-height: 1.5;" placeholder='{\n  "title": "Machine Learning",\n  "lang": "en",\n  "emoji": "🧠",\n  "nodes": [\n    {\n      "title": "Supervised Learning",\n      "emoji": "🎯",\n      "children": [\n        { "title": "Regression", "emoji": "📈" },\n        { "title": "Classification", "emoji": "🏷️" }\n      ]\n    }\n  ]\n}'></textarea>
+
+      <!-- Modal Actions -->
+      <div style="width: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+        <button class="btn" onclick="closeAiImportModal()" id="btn-cancel-ai">Cancel</button>
+        <button class="btn btn-primary" onclick="generateMindMapFromStructuredInput()" id="btn-generate-ai">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span id="txt-generate-ai">Build Mind Map</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       NODE DELETION CONFIRMATION DIALOG
        ========================================================================= -->
   <div id="delete-confirm-modal" class="hidden" style="position: fixed; inset: 0; z-index: 850; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 16px;">
     <div class="panel-box" style="width: 100%; max-width: 380px; flex-direction: column; padding: 20px; gap: 14px; border-radius: 16px;">
@@ -747,12 +831,15 @@
         openBtn: 'Open',
         addChildBtn: 'Sub-node',
         addSiblingBtn: 'Sibling',
+        aiImportBtn: 'AI',
         curved: 'Curved',
         stepped: 'Stepped',
         straight: 'Straight',
         langBadge: 'FA',
         colorLbl: 'Color:',
-        editText: 'Edit (Enter)',
+        editText: 'Edit',
+        singleLineMode: 'Single Line',
+        multiLineMode: 'Multi Line',
         addIcon: 'Icon',
         removeIcon: 'Remove Icon',
         attachImage: 'Image',
@@ -767,6 +854,11 @@
         pdfNameLbl: 'Document Title:',
         pdfOrientationLbl: 'Orientation:',
         pdfConfirmBtn: 'Export PDF',
+        aiModalTitle: 'AI & Structured JSON Importer',
+        promptTitle: 'Prompt Template for ChatGPT / Claude:',
+        promptDesc: 'Click below to copy the prompt, send it with your article/book text to AI, then paste the resulting JSON here.',
+        copyPromptBtn: 'Copy AI Prompt',
+        generateAiBtn: 'Build Mind Map',
         shortcutsTitle: 'Keyboard Shortcuts',
         iconTitle: 'Icon & Emoji Library',
         iconCat1: 'Tech & Ideas',
@@ -787,6 +879,7 @@
         delModalDesc: 'This node has connected sub-branches. Deleting it will also remove all its child nodes. Do you want to proceed?',
         delConfirmBtn: 'Delete All',
         ctxEdit: 'Edit Text',
+        ctxLineMode: 'Single / Multi Line',
         ctxAddChild: 'Add Sub-node',
         ctxAddSibling: 'Add Sibling',
         ctxIcon: 'Add Icon',
@@ -801,7 +894,7 @@
           { name: 'Undo / Redo', key: 'Ctrl + Z / Ctrl + Y' },
           { name: 'Open Icon Library', key: 'Ctrl + I' },
           { name: 'Remove Icon from Node', key: 'Alt + X' },
-          { name: 'Navigate Nodes in 2D', key: '↑ ↓ ← →' },
+          { name: 'Fit & Center Map to Viewport', key: 'Click Compass or Generate' },
           { name: 'Delete Selected Node', key: 'Delete' },
           { name: 'Save Project File', key: 'Ctrl + S' },
           { name: 'Export PDF Document', key: 'Ctrl + P' },
@@ -816,12 +909,15 @@
         openBtn: 'باز کردن',
         addChildBtn: 'زیرشاخه',
         addSiblingBtn: 'هم‌سطح',
+        aiImportBtn: 'هوش مصنوعی',
         curved: 'منحنی',
         stepped: 'شکسته',
         straight: 'مستقیم',
         langBadge: 'EN',
         colorLbl: 'رنگ خط:',
-        editText: 'ویرایش متن',
+        editText: 'ویرایش',
+        singleLineMode: 'تک‌خطی',
+        multiLineMode: 'چندخطی',
         addIcon: 'آیکون',
         removeIcon: 'حذف آیکون',
         attachImage: 'عکس',
@@ -836,6 +932,11 @@
         pdfNameLbl: 'عنوان فایل:',
         pdfOrientationLbl: 'جهت صفحه:',
         pdfConfirmBtn: 'تولید فایل PDF',
+        aiModalTitle: 'ورود ساختار JSON و هوش مصنوعی',
+        promptTitle: 'پرامپت آماده برای ChatGPT / Claude / Gemini:',
+        promptDesc: 'دکمه زیر را برای کپی پرامپت بزنید، آن را همراه متن به هوش مصنوعی بدهید، سپس خروجی JSON را اینجا پیست کنید.',
+        copyPromptBtn: 'کپی پرامپت هوش مصنوعی',
+        generateAiBtn: 'ترسیم مایند مپ',
         shortcutsTitle: 'کلیدهای میانبر سریع',
         iconTitle: 'کتابخانه آیکون و ایموجی',
         iconCat1: 'تکنولوژی و ایده',
@@ -856,6 +957,7 @@
         delModalDesc: 'این نود دارای زیرشاخه است. با حذف آن، تمامی شاخه‌های متصل به آن نیز حذف خواهند شد. آیا ادامه می‌دهید؟',
         delConfirmBtn: 'حذف همه',
         ctxEdit: 'ویرایش متن',
+        ctxLineMode: 'تک‌خطی / چندخطی',
         ctxAddChild: 'افزودن زیرشاخه',
         ctxAddSibling: 'افزودن شاخه هم‌سطح',
         ctxIcon: 'افزودن آیکون',
@@ -870,7 +972,7 @@
           { name: 'بازگشت به قبل / بعد (Undo / Redo)', key: 'Ctrl + Z / Ctrl + Y' },
           { name: 'باز کردن کتابخانه آیکون', key: 'Ctrl + I' },
           { name: 'حذف آیکون از نود فعال', key: 'Alt + X' },
-          { name: 'جابه‌جایی انتخاب نودها', key: '↑ ↓ ← →' },
+          { name: 'تراز و مرکزچین خودکار کل مپ', key: 'کلیک روی قطب‌نما یا AI' },
           { name: 'حذف نود انتخابی', key: 'Delete' },
           { name: 'ذخیره امن فایل پروژه', key: 'Ctrl + S' },
           { name: 'خروجی مستقیم سند PDF', key: 'Ctrl + P' },
@@ -889,7 +991,7 @@
       editingNodeId: null,
       contextNodeId: null,
       pendingDeleteNodeId: null,
-      // Starts with ONLY ONE ROOT NODE on fresh startup
+      // Starts with strictly ONE root node
       nodes: [
         {
           id: 'root',
@@ -900,6 +1002,7 @@
           color: '#0ea5e9',
           emoji: null,
           image: null,
+          singleLine: false,
           isRoot: true
         }
       ],
@@ -909,7 +1012,6 @@
       panStart: { x: 0, y: 0 }
     };
 
-    // Deep cloned Undo/Redo History Manager
     const historyManager = {
       stack: [],
       index: -1,
@@ -980,6 +1082,7 @@
     const fontInfoModal = document.getElementById('font-info-modal');
     const saveProjectModal = document.getElementById('save-project-modal');
     const pdfExportModal = document.getElementById('pdf-export-modal');
+    const aiImportModal = document.getElementById('ai-import-modal');
     const deleteConfirmModal = document.getElementById('delete-confirm-modal');
     const imageViewerModal = document.getElementById('image-viewer-modal');
     const viewerImgTarget = document.getElementById('viewer-img-target');
@@ -990,9 +1093,8 @@
        4. INITIALIZATION & LIFECYCLE CONTROLLERS
        ========================================================================= */
     function init() {
-      // Global context menu lock on canvas background
       window.addEventListener('contextmenu', (e) => {
-        if (!e.target.closest('input') && !e.target.closest('.mind-node')) {
+        if (!e.target.closest('input') && !e.target.closest('textarea') && !e.target.closest('.mind-node')) {
           e.preventDefault();
           closeContextMenu();
         }
@@ -1028,16 +1130,14 @@
         document.getElementById('theme-icon').innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
       }
 
-      // Seed initial history state
       historyManager.push();
-
       render();
       setupEventListeners();
       setupImageViewerEvents();
       
       setTimeout(() => {
         autoLayoutBalancedTree();
-        resetZoom();
+        fitViewToMap();
       }, 150);
     }
 
@@ -1084,6 +1184,7 @@
         state.lang = state.lang === 'en' ? 'fa' : 'en';
         applyLanguage(state.lang);
         autoLayoutBalancedTree();
+        fitViewToMap();
         autoSave();
 
         setTimeout(() => {
@@ -1102,6 +1203,7 @@
       document.getElementById('btn-open-project').innerText = t.openBtn;
       document.getElementById('btn-add-child').innerText = t.addChildBtn;
       document.getElementById('btn-add-sibling').innerText = t.addSiblingBtn;
+      document.getElementById('btn-ai-import').innerText = t.aiImportBtn;
       document.getElementById('btn-line-curved').innerText = t.curved;
       document.getElementById('btn-line-stepped').innerText = t.stepped;
       document.getElementById('btn-line-straight').innerText = t.straight;
@@ -1127,6 +1229,13 @@
       document.getElementById('btn-cancel-pdf').innerText = t.cancel;
       document.getElementById('btn-confirm-pdf').innerText = t.pdfConfirmBtn;
 
+      document.getElementById('txt-ai-modal-title').innerText = t.aiModalTitle;
+      document.getElementById('lbl-prompt-title').innerText = t.promptTitle;
+      document.getElementById('lbl-prompt-desc').innerText = t.promptDesc;
+      document.getElementById('txt-copy-prompt').innerText = t.copyPromptBtn;
+      document.getElementById('txt-generate-ai').innerText = t.generateAiBtn;
+      document.getElementById('btn-cancel-ai').innerText = t.cancel;
+
       document.getElementById('txt-shortcuts-title').innerText = t.shortcutsTitle;
       document.getElementById('txt-font-modal-title').innerText = t.fontModalTitle;
       document.getElementById('txt-font-modal-body').innerHTML = t.fontModalBody;
@@ -1137,14 +1246,13 @@
       document.getElementById('btn-apply-custom-emoji').innerText = t.applyCustomEmoji;
       document.getElementById('custom-emoji-input').placeholder = t.customEmojiPlaceholder;
 
-      // Deletion confirmation modal labels
       document.getElementById('txt-del-modal-title').innerText = t.delModalTitle;
       document.getElementById('txt-del-modal-desc').innerText = t.delModalDesc;
       document.getElementById('btn-confirm-delete').innerText = t.delConfirmBtn;
       document.getElementById('btn-cancel-delete').innerText = t.cancel;
 
-      // Context menu labels
       document.getElementById('ctx-edit').innerText = t.ctxEdit;
+      document.getElementById('ctx-line-mode').innerText = t.ctxLineMode;
       document.getElementById('ctx-add-child').innerText = t.ctxAddChild;
       document.getElementById('ctx-add-sibling').innerText = t.ctxAddSibling;
       document.getElementById('ctx-icon').innerText = t.ctxIcon;
@@ -1197,7 +1305,7 @@
     }
 
     /* =========================================================================
-       4. RENDERING PIPELINE (NODES & SVG CONNECTORS)
+       5. RENDERING PIPELINE (NODES & SVG CONNECTORS)
        ========================================================================= */
     function render() {
       renderNodes();
@@ -1215,7 +1323,8 @@
         const nodeEl = document.createElement('div');
         nodeEl.id = `node-${node.id}`;
         
-        nodeEl.className = `mind-node ${isSelected ? 'selected' : ''} ${isEditing ? 'is-editing' : ''} ${node.isRoot ? 'root-node' : ''}`;
+        const singleLineClass = node.singleLine ? 'single-line-mode' : '';
+        nodeEl.className = `mind-node ${isSelected ? 'selected' : ''} ${isEditing ? 'is-editing' : ''} ${node.isRoot ? 'root-node' : ''} ${singleLineClass}`;
         nodeEl.style.left = `${node.x}px`;
         nodeEl.style.top = `${node.y}px`;
 
@@ -1239,7 +1348,6 @@
             </div>`;
         }
 
-        // Strict bidirectional RTL/LTR text enforcement
         contentHtml += `
           <div 
             id="editor-${node.id}"
@@ -1261,7 +1369,6 @@
           startEditingNode(node.id);
         });
 
-        // Dedicated custom right-click context menu on node
         nodeEl.addEventListener('contextmenu', (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1293,7 +1400,7 @@
         if (node && node.text !== element.innerText) {
           node.text = element.innerText;
           historyManager.push();
-          autoLayoutBalancedTree(); // Auto balance immediately on text change
+          autoLayoutBalancedTree();
         }
         state.editingNodeId = null;
         render();
@@ -1302,15 +1409,23 @@
       }
     }
 
-    /**
-     * Handles keyboard events inside node editor:
-     * - ONLY Escape commits text and returns to node selection.
-     * - Enter and Shift+Enter insert newlines naturally.
-     */
     function handleEditorKeyDown(e, id, element) {
       if (e.key === 'Escape') {
         e.preventDefault();
         element.blur();
+      }
+    }
+
+    function toggleNodeSingleLine(nodeId) {
+      const node = state.nodes.find(n => n.id === (nodeId || state.selectedNodeId));
+      if (node) {
+        node.singleLine = !node.singleLine;
+        render();
+        setTimeout(() => {
+          autoLayoutBalancedTree();
+          historyManager.push();
+          autoSave();
+        }, 30);
       }
     }
 
@@ -1346,12 +1461,13 @@
         y: parent.y + offsetY,
         color: parent.isRoot ? randomColor : parent.color,
         emoji: null,
-        image: null
+        image: null,
+        singleLine: false
       };
 
       state.nodes.push(newNode);
       state.selectedNodeId = newId;
-      autoLayoutBalancedTree(); // Auto balance immediately on new child
+      autoLayoutBalancedTree();
       historyManager.push();
       autoSave();
 
@@ -1374,12 +1490,13 @@
         y: active.y + 85,
         color: active.color,
         emoji: null,
-        image: null
+        image: null,
+        singleLine: false
       };
 
       state.nodes.push(newNode);
       state.selectedNodeId = newId;
-      autoLayoutBalancedTree(); // Auto balance immediately on new sibling
+      autoLayoutBalancedTree();
       historyManager.push();
       autoSave();
 
@@ -1387,12 +1504,227 @@
     }
 
     /* =========================================================================
-       5. NODE DELETION & ROOT PROTECTION
+       6. STRUCTURED JSON & AI OUTLINE PARSER
+       ========================================================================= */
+    function openAiImportModal() {
+      aiImportModal.classList.remove('hidden');
+      document.getElementById('ai-markdown-input').focus();
+    }
+
+    function closeAiImportModal() {
+      aiImportModal.classList.add('hidden');
+    }
+
+    function copyAiPromptTemplate() {
+      const promptText = state.lang === 'fa' 
+        ? `لطفاً متن زیر را با دقت تحلیل کرده و یک مایند مپ در قالب یک ساختار معتبر JSON تولید کن.\n\nقوانین خروجی:\n۱. فیلد title: عنوان اصلی متن.\n۲. فیلد lang: زبان متن ("fa" برای فارسی یا "en" برای انگلیسی).\n۳. فیلد emoji: یک ایموجی مرتبط برای هر نود.\n۴. فیلد nodes: آرایه‌ای از شاخه‌های اصلی که هر کدام می‌توانند دارای زیرشاخه در فیلد children باشند.\n۵. خروجی فقط یک بلاک کد JSON معتبر باشد و هیچ متن اضافی ننویس.\n\n[متن کتاب یا مقاله شما در اینجا]`
+        : `Please analyze the text below and convert it into a structured hierarchical Mind Map in valid JSON format.\n\nOutput Rules:\n1. 'title': Main topic title.\n2. 'lang': Language code ("en" or "fa").\n3. 'emoji': Relevant emoji for each node.\n4. 'nodes': Array of primary branch objects, with nested 'children' arrays.\n5. Output ONLY the raw valid JSON code block without conversational text.\n\n[Paste your book/article text here]`;
+      
+      navigator.clipboard.writeText(promptText).then(() => {
+        const btnText = document.getElementById('txt-copy-prompt');
+        const orig = btnText.innerText;
+        btnText.innerText = state.lang === 'fa' ? 'کپی شد!' : 'Copied!';
+        setTimeout(() => btnText.innerText = orig, 1500);
+      });
+    }
+
+    /**
+     * Parses structured JSON or Markdown input, builds nodes, clears memory,
+     * immediately runs auto-balance, and adjusts optimal screen fit.
+     */
+    function generateMindMapFromStructuredInput() {
+      const inputEl = document.getElementById('ai-markdown-input');
+      const rawText = inputEl.value.trim();
+      if (!rawText) return;
+
+      const palette = ['#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+      const newNodes = [];
+
+      // 1. Try Parsing as Structured JSON
+      try {
+        let cleanJsonText = rawText;
+        if (cleanJsonText.includes('```json')) {
+          cleanJsonText = cleanJsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+        } else if (cleanJsonText.includes('```')) {
+          cleanJsonText = cleanJsonText.replace(/```/g, '').trim();
+        }
+
+        const jsonObj = JSON.parse(cleanJsonText);
+
+        if (jsonObj && (jsonObj.title || jsonObj.nodes)) {
+          if (jsonObj.lang && (jsonObj.lang === 'fa' || jsonObj.lang === 'en')) {
+            state.lang = jsonObj.lang;
+            applyLanguage(jsonObj.lang);
+          }
+
+          const rootNode = {
+            id: 'root',
+            parentId: null,
+            text: jsonObj.title || 'Main Topic',
+            x: 0,
+            y: 0,
+            color: '#0ea5e9',
+            emoji: jsonObj.emoji || null,
+            image: null,
+            singleLine: false,
+            isRoot: true
+          };
+          newNodes.push(rootNode);
+
+          function parseJsonChildren(childrenList, parentId, branchColor) {
+            if (!Array.isArray(childrenList)) return;
+            childrenList.forEach((childItem, idx) => {
+              const childId = 'node-' + Math.random().toString(36).substr(2, 9);
+              const color = branchColor || palette[idx % palette.length];
+              newNodes.push({
+                id: childId,
+                parentId: parentId,
+                text: childItem.title || childItem.text || 'Topic',
+                x: 0,
+                y: 0,
+                color: color,
+                emoji: childItem.emoji || null,
+                image: null,
+                singleLine: false
+              });
+              if (childItem.children) {
+                parseJsonChildren(childItem.children, childId, color);
+              }
+            });
+          }
+
+          if (jsonObj.nodes && Array.isArray(jsonObj.nodes)) {
+            jsonObj.nodes.forEach((branch, bIdx) => {
+              const branchId = 'node-' + Math.random().toString(36).substr(2, 9);
+              const bColor = palette[bIdx % palette.length];
+              newNodes.push({
+                id: branchId,
+                parentId: 'root',
+                text: branch.title || branch.text || 'Topic',
+                x: 0,
+                y: 0,
+                color: bColor,
+                emoji: branch.emoji || null,
+                image: null,
+                singleLine: false
+              });
+              if (branch.children) {
+                parseJsonChildren(branch.children, branchId, bColor);
+              }
+            });
+          }
+
+          if (newNodes.length > 0) {
+            state.nodes = newNodes;
+            state.selectedNodeId = 'root';
+            inputEl.value = ''; // Clear prompt memory
+            closeAiImportModal();
+            render();
+            setTimeout(() => {
+              autoLayoutBalancedTree();
+              fitViewToMap(); // Symmetrical fit view
+              historyManager.push();
+              autoSave();
+            }, 50);
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Fallback: Parse Indented Markdown List
+      const lines = rawText.split('\n').filter(l => l.trim().length > 0);
+      if (lines.length === 0) return;
+
+      const emojiRegex = /^([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]+)\s*(.*)$/u;
+      const stack = [];
+
+      lines.forEach((line, index) => {
+        const indentMatch = line.match(/^(\s*)/);
+        const leadingSpaces = indentMatch ? indentMatch[1].replace(/\t/g, '  ').length : 0;
+        const depth = Math.floor(leadingSpaces / 2);
+
+        let cleanText = line.trim();
+        let isRootLine = false;
+
+        if (cleanText.startsWith('#')) {
+          cleanText = cleanText.replace(/^#+\s*/, '');
+          isRootLine = true;
+        } else {
+          cleanText = cleanText.replace(/^[-*+]\s*/, '').replace(/^\d+\.\s*/, '');
+        }
+
+        let emoji = null;
+        const match = cleanText.match(emojiRegex);
+        if (match) {
+          emoji = match[1];
+          cleanText = match[2];
+        }
+
+        const nodeId = index === 0 || isRootLine ? 'root' : 'node-' + Math.random().toString(36).substr(2, 9);
+        
+        if (nodeId === 'root') {
+          const rootNode = {
+            id: 'root',
+            parentId: null,
+            text: cleanText || 'Main Topic',
+            x: 0,
+            y: 0,
+            color: '#0ea5e9',
+            emoji: emoji,
+            image: null,
+            singleLine: false,
+            isRoot: true
+          };
+          newNodes.push(rootNode);
+          stack.length = 0;
+          stack.push({ node: rootNode, depth: -1 });
+        } else {
+          while (stack.length > 1 && stack[stack.length - 1].depth >= depth) {
+            stack.pop();
+          }
+
+          const parent = stack[stack.length - 1].node;
+          const branchColor = parent.isRoot ? palette[newNodes.length % palette.length] : parent.color;
+
+          const newNode = {
+            id: nodeId,
+            parentId: parent.id,
+            text: cleanText || 'Topic',
+            x: 0,
+            y: 0,
+            color: branchColor,
+            emoji: emoji,
+            image: null,
+            singleLine: false
+          };
+
+          newNodes.push(newNode);
+          stack.push({ node: newNode, depth: depth });
+        }
+      });
+
+      if (newNodes.length > 0) {
+        state.nodes = newNodes;
+        state.selectedNodeId = 'root';
+        inputEl.value = ''; // Clear prompt memory
+        closeAiImportModal();
+        render();
+        setTimeout(() => {
+          autoLayoutBalancedTree();
+          fitViewToMap(); // Symmetrical fit view
+          historyManager.push();
+          autoSave();
+        }, 50);
+      }
+    }
+
+    /* =========================================================================
+       7. NODE DELETION & ROOT PROTECTION
        ========================================================================= */
     function requestDeleteNode(nodeId) {
       if (!nodeId) return;
       const target = state.nodes.find(n => n.id === nodeId);
-      if (target && target.isRoot) return; // Cannot delete root node
+      if (target && target.isRoot) return;
 
       const hasChildren = state.nodes.some(n => n.parentId === nodeId);
       if (hasChildren) {
@@ -1427,13 +1759,13 @@
 
       state.nodes = state.nodes.filter(n => !toDelete.has(n.id));
       state.selectedNodeId = 'root';
-      autoLayoutBalancedTree(); // Auto balance immediately on deletion
+      autoLayoutBalancedTree();
       historyManager.push();
       autoSave();
     }
 
     /* =========================================================================
-       6. CONTEXT MENU CONTROLLERS
+       8. CONTEXT MENU CONTROLLERS
        ========================================================================= */
     function openContextMenu(nodeId, x, y) {
       state.contextNodeId = nodeId;
@@ -1450,7 +1782,6 @@
         removeIconBtn.classList.add('hidden');
       }
 
-      // Root node cannot be deleted: hide context delete option completely
       if (node && node.isRoot) {
         ctxDelBtn.classList.add('hidden');
         ctxDelDivider.classList.add('hidden');
@@ -1459,8 +1790,8 @@
         ctxDelDivider.classList.remove('hidden');
       }
 
-      nodeContextMenu.style.left = `${Math.min(x, window.innerWidth - 200)}px`;
-      nodeContextMenu.style.top = `${Math.min(y, window.innerHeight - 260)}px`;
+      nodeContextMenu.style.left = `${Math.min(x, window.innerWidth - 210)}px`;
+      nodeContextMenu.style.top = `${Math.min(y, window.innerHeight - 280)}px`;
       nodeContextMenu.classList.remove('hidden');
     }
 
@@ -1477,6 +1808,9 @@
       switch(action) {
         case 'edit':
           startEditingNode(nodeId);
+          break;
+        case 'toggle-single-line':
+          toggleNodeSingleLine(nodeId);
           break;
         case 'add-child':
           addChildNodeSmart();
@@ -1500,7 +1834,7 @@
     }
 
     /* =========================================================================
-       7. MATHEMATICAL SYMMETRICAL TREE AUTO-LAYOUT (BUZAN'S CLOCKWISE PRINCIPLE)
+       9. SEQUENTIAL CLOCKWISE PARTITIONING WITH OPTIMAL WEIGHT BALANCE
        ========================================================================= */
     function autoLayoutBalancedTree() {
       const root = state.nodes.find(n => n.isRoot) || state.nodes[0];
@@ -1514,7 +1848,6 @@
       const gapX = 100;
       const gapY = 35;
 
-      // Recursive function to calculate vertical bounding height of any subtree
       function getSubtreeHeight(nodeId) {
         const children = state.nodes.filter(n => n.parentId === nodeId);
         const el = document.getElementById(`node-${nodeId}`);
@@ -1527,7 +1860,6 @@
         return Math.max(selfH, childrenTotalH);
       }
 
-      // Direct children of root in strict sequential creation order
       const directChildren = state.nodes.filter(n => n.parentId === root.id);
       const total = directChildren.length;
 
@@ -1537,8 +1869,6 @@
       if (total === 1) {
         rightChildren = [directChildren[0]];
       } else if (total > 1) {
-        // Sequential partition: find cut point k (1 <= k < total) that minimizes height difference
-        // while preserving 100% strict clockwise rotation order
         const branchHeights = directChildren.map(c => getSubtreeHeight(c.id));
         let bestK = Math.ceil(total / 2);
         let minDiff = Infinity;
@@ -1558,13 +1888,10 @@
           }
         }
 
-        // 1. Right Side (Top -> Bottom: 1 o'clock to 5 o'clock)
         rightChildren = directChildren.slice(0, bestK);
-        // 2. Left Side (Bottom -> Top: 7 o'clock to 11 o'clock, reversed for top-to-bottom layout column)
         leftChildren = directChildren.slice(bestK).reverse();
       }
 
-      // Recursive placement centered exactly around parent's vertical center (pCenterY)
       function layoutBranchRecursive(parentId, isRight) {
         const parent = state.nodes.find(n => n.id === parentId);
         const parentEl = document.getElementById(`node-${parent.id}`);
@@ -1609,7 +1936,6 @@
       layoutBranchRecursive(root.id, false);
 
       render();
-      resetZoom();
       autoSave();
     }
 
@@ -1715,6 +2041,44 @@
       document.getElementById('zoom-level').innerText = `${Math.round(state.transform.scale * 100)}%`;
     }
 
+    /**
+     * Auto-Fit & Center viewport comfortably around the full mind map.
+     */
+    function fitViewToMap() {
+      if (!state.nodes.length) return;
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      state.nodes.forEach(n => {
+        const el = document.getElementById(`node-${n.id}`);
+        const w = el ? el.offsetWidth : 160;
+        const h = el ? el.offsetHeight : 60;
+        minX = Math.min(minX, n.x);
+        minY = Math.min(minY, n.y);
+        maxX = Math.max(maxX, n.x + w);
+        maxY = Math.max(maxY, n.y + h);
+      });
+
+      const mapW = maxX - minX;
+      const mapH = maxY - minY;
+      const margin = 140;
+
+      const vW = window.innerWidth;
+      const vH = window.innerHeight;
+
+      let scaleW = vW / (mapW + margin * 2);
+      let scaleH = vH / (mapH + margin * 2);
+      let optimalScale = Math.min(scaleW, scaleH);
+      optimalScale = Math.min(Math.max(0.5, optimalScale), 1.05);
+
+      const mapCenterX = minX + mapW / 2;
+      const mapCenterY = minY + mapH / 2;
+
+      state.transform.scale = optimalScale;
+      state.transform.x = (vW / 2) - (mapCenterX * optimalScale);
+      state.transform.y = (vH / 2) - (mapCenterY * optimalScale);
+
+      updateTransform();
+    }
+
     function resetZoom() {
       const root = state.nodes.find(n => n.isRoot) || state.nodes[0];
       const rootEl = document.getElementById(`node-${root.id}`);
@@ -1762,7 +2126,7 @@
     }
 
     /* =========================================================================
-       8. INTERACTION EVENT LISTENERS & HOTKEYS
+       10. INTERACTION EVENT LISTENERS & HOTKEYS
        ========================================================================= */
     function setupEventListeners() {
       viewport.addEventListener('mousedown', (e) => {
@@ -1835,7 +2199,6 @@
         updateTransform();
       }, { passive: false });
 
-      // Keyboard Shortcut Dispatcher
       window.addEventListener('keydown', (e) => {
         if (e.ctrlKey || e.metaKey) {
           if (e.key.toLowerCase() === 's') {
@@ -1910,6 +2273,7 @@
           closeShortcutsModal();
           closeSaveModal();
           closePdfModal();
+          closeAiImportModal();
           closeImageViewer();
           closeFontInfoModal();
           closeDeleteConfirmModal();
@@ -1944,7 +2308,6 @@
       if (el) el.classList.add('selected');
       updateInspector();
 
-      // Root node protection: disable top delete button
       const node = state.nodes.find(n => n.id === id);
       const deleteBtn = document.getElementById('btn-delete-node');
       if (node && node.isRoot) {
@@ -1953,6 +2316,14 @@
       } else {
         deleteBtn.style.opacity = '1';
         deleteBtn.style.pointerEvents = 'auto';
+      }
+
+      // Update Single-Line button label in Inspector
+      const lineBtn = document.getElementById('btn-toggle-line-mode');
+      if (lineBtn && node) {
+        lineBtn.innerText = node.singleLine 
+          ? (state.lang === 'fa' ? 'چندخطی' : 'Multi Line')
+          : (state.lang === 'fa' ? 'تک‌خطی' : 'Single Line');
       }
     }
 
@@ -2040,7 +2411,7 @@
     }
 
     /* =========================================================================
-       9. FULLSCREEN LIGHTBOX
+       11. FULLSCREEN LIGHTBOX
        ========================================================================= */
     function openFullscreenImageViewer(imgSrc, event) {
       if (event) event.stopPropagation();
@@ -2119,7 +2490,7 @@
     }
 
     /* =========================================================================
-       10. ENCRYPTED PROJECT PERSISTENCE (.PMM)
+       12. ENCRYPTED PROJECT PERSISTENCE (.PMM)
        ========================================================================= */
     function openSaveModal() {
       const root = state.nodes.find(n => n.isRoot);
@@ -2182,8 +2553,11 @@
             }
             historyManager.push();
             render();
-            resetZoom();
-            autoSave();
+            setTimeout(() => {
+              autoLayoutBalancedTree();
+              fitViewToMap();
+              autoSave();
+            }, 50);
           } else {
             alert('Invalid project structure!');
           }
@@ -2205,7 +2579,7 @@
     }
 
     /* =========================================================================
-       11. PIXEL-PERFECT NATIVE CANVAS RENDERER & PDF EXPORT
+       13. PERMANENT FIX: ACCURATE NON-OVERFLOW CANVAS EXPORTER
        ========================================================================= */
     function drawCanvasRoundedRect(ctx, x, y, width, height, radius) {
       ctx.beginPath();
@@ -2221,9 +2595,41 @@
       ctx.closePath();
     }
 
+    function wrapAndDrawCanvasText(ctx, text, x, y, maxWidth, lineHeight, isSingleLine) {
+      if (isSingleLine) {
+        ctx.fillText(text, x, y);
+        return y + lineHeight;
+      }
+
+      const paragraphs = text.split('\n');
+      let currentY = y;
+      
+      paragraphs.forEach(para => {
+        const words = para.split(' ');
+        let currentLine = '';
+        
+        for (let n = 0; n < words.length; n++) {
+          const testLine = currentLine + (currentLine ? ' ' : '') + words[n];
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > maxWidth && n > 0) {
+            ctx.fillText(currentLine, x, currentY);
+            currentLine = words[n];
+            currentY += lineHeight;
+          } else {
+            currentLine = testLine;
+          }
+        }
+        if (currentLine) {
+          ctx.fillText(currentLine, x, currentY);
+          currentY += lineHeight;
+        }
+      });
+      return currentY;
+    }
+
     /**
-     * Accurately rasterizes the live map using exact relative DOM coordinates.
-     * Guarantees 100% fidelity matching the screen view with strict RTL/LTR support.
+     * Highly accurate offline canvas rasterizer with dynamic text wrapping,
+     * safe clipping boundaries, and proper single/multi-line geometry handling.
      */
     async function renderHighResMindMapCanvas() {
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -2315,7 +2721,7 @@
         ctx.beginPath(); ctx.arc(endX, endY, 3.5, 0, Math.PI * 2); ctx.fill();
       });
 
-      // Render nodes using live relative geometry matching the DOM exactly
+      // Render nodes using live relative geometry matching the DOM
       const zoom = state.transform.scale;
       const isRTL = state.lang === 'fa';
 
@@ -2329,16 +2735,27 @@
         const nx = node.x - minX + margin;
         const ny = node.y - minY + margin;
 
-        // Draw node card background & border
-        ctx.fillStyle = state.isDark ? '#18181b' : '#ffffff';
-        ctx.strokeStyle = node.isRoot ? (node.color || '#0ea5e9') : (state.isDark ? '#27272a' : '#e4e4e7');
-        ctx.lineWidth = node.isRoot ? 2 : 1.5;
+        // Draw node card background
+        ctx.fillStyle = node.isRoot 
+          ? (state.isDark ? '#1e293b' : '#ffffff') 
+          : (state.isDark ? '#18181b' : '#ffffff');
+          
+        ctx.strokeStyle = node.isRoot 
+          ? (state.isDark ? '#38bdf8' : '#0ea5e9') 
+          : (state.isDark ? '#27272a' : '#e4e4e7');
+          
+        ctx.lineWidth = node.isRoot ? 2.5 : 1.5;
 
-        drawCanvasRoundedRect(ctx, nx, ny, nw, nh, 14);
+        drawCanvasRoundedRect(ctx, nx, ny, nw, nh, node.isRoot ? 18 : 14);
         ctx.fill();
         ctx.stroke();
 
-        // Render emoji with exact relative position
+        // Safety clipping
+        ctx.save();
+        drawCanvasRoundedRect(ctx, nx + 1, ny + 1, nw - 2, nh - 2, node.isRoot ? 17 : 13);
+        ctx.clip();
+
+        // Render emoji
         const iconEl = el.querySelector('.node-icon');
         if (iconEl && node.emoji) {
           const iconRect = iconEl.getBoundingClientRect();
@@ -2351,7 +2768,7 @@
           ctx.fillText(node.emoji, nx + relX, ny + relY);
         }
 
-        // Render image with exact relative geometry
+        // Render image
         const imgEl = el.querySelector('.node-img-wrapper img');
         if (imgEl && node.image) {
           const imgRect = imgEl.getBoundingClientRect();
@@ -2375,24 +2792,26 @@
           });
         }
 
-        // Render text with strict language direction & typography
+        // Render text
         const textEl = el.querySelector('.node-text-content');
         if (textEl) {
           const textRect = textEl.getBoundingClientRect();
           const relX = (textRect.left - nodeRect.left + textRect.width / 2) / zoom;
-          let curTextY = (textRect.top - nodeRect.top + 13) / zoom;
+          const relY = (textRect.top - nodeRect.top + 13) / zoom;
+          const maxTextW = nw - 24;
 
-          ctx.font = '600 13px system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.font = node.isRoot 
+            ? '700 14.5px system-ui, -apple-system, BlinkMacSystemFont, sans-serif'
+            : '600 13px system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+            
           ctx.textAlign = 'center';
-          ctx.direction = isRTL ? 'rtl' : 'ltr'; // Strict RTL/LTR enforcement
+          ctx.direction = isRTL ? 'rtl' : 'ltr';
           ctx.fillStyle = state.isDark ? '#f4f4f5' : '#09090b';
 
-          const lines = (node.text || '').split('\n');
-          lines.forEach(line => {
-            ctx.fillText(line, nx + relX, ny + curTextY);
-            curTextY += 19;
-          });
+          wrapAndDrawCanvasText(ctx, node.text || '', nx + relX, ny + relY, maxTextW, node.isRoot ? 20 : 18, node.singleLine);
         }
+
+        ctx.restore();
       }
 
       return canvasOffscreen;
@@ -2411,7 +2830,7 @@
     }
 
     /* =========================================================================
-       12. CUSTOM PDF EXPORT MODAL & GENERATOR
+       14. CUSTOM PDF EXPORT MODAL & GENERATOR
        ========================================================================= */
     function openPdfModal() {
       const root = state.nodes.find(n => n.isRoot);
@@ -2424,10 +2843,6 @@
       pdfExportModal.classList.add('hidden');
     }
 
-    /**
-     * Compiles canvas into a pure PDF 1.4 binary stream completely client-side.
-     * Uses DCTDecode to embed raw JPEG bytes without needing external PDF libraries.
-     */
     async function confirmExportPdf() {
       const rawName = document.getElementById('input-pdf-name').value.trim() || 'MindMap_Document';
       const orientationVal = document.getElementById('select-pdf-orientation').value;
@@ -2440,7 +2855,6 @@
         const binaryJpeg = atob(rawBase64);
         const jpegLen = binaryJpeg.length;
 
-        // Determine orientation
         let isLandscape = canvasObj.width >= canvasObj.height;
         if (orientationVal === 'landscape') isLandscape = true;
         else if (orientationVal === 'portrait') isLandscape = false;
@@ -2498,7 +2912,6 @@
       }
     }
 
-    // Launch application initialization on DOM ready
     window.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
