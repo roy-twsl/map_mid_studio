@@ -71,7 +71,9 @@
       ]
     }
   ]
-}# 🧠 Mind Map Studio (مایند مپ استودیو)
+}
+
+# 🧠 Mind Map Studio (مایند مپ استودیو)
 
 <div align="center">
 
