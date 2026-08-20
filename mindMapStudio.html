@@ -499,8 +499,8 @@
       <span id="btn-edit-text">Edit</span>
     </button>
 
-    <!-- Toggle Single-Line / Multi-Line Mode Button -->
-    <button class="btn" onclick="toggleNodeSingleLine(state.selectedNodeId)" title="Toggle Single-Line / Multi-Line Wrapping">
+    <!-- Toggle Single-Line / Multi-Line Button -->
+    <button class="btn" onclick="toggleNodeSingleLine(state.selectedNodeId)" title="Toggle Single-Line / Multi-Line">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
       <span id="btn-toggle-line-mode">Single Line</span>
     </button>
@@ -991,7 +991,6 @@
       editingNodeId: null,
       contextNodeId: null,
       pendingDeleteNodeId: null,
-      // Starts with strictly ONE root node
       nodes: [
         {
           id: 'root',
@@ -1515,10 +1514,79 @@
       aiImportModal.classList.add('hidden');
     }
 
+    /**
+     * Copies the Tony Buzan Master Mind Map AI Prompt to clipboard.
+     */
     function copyAiPromptTemplate() {
-      const promptText = state.lang === 'fa' 
-        ? `لطفاً متن زیر را با دقت تحلیل کرده و یک مایند مپ در قالب یک ساختار معتبر JSON تولید کن.\n\nقوانین خروجی:\n۱. فیلد title: عنوان اصلی متن.\n۲. فیلد lang: زبان متن ("fa" برای فارسی یا "en" برای انگلیسی).\n۳. فیلد emoji: یک ایموجی مرتبط برای هر نود.\n۴. فیلد nodes: آرایه‌ای از شاخه‌های اصلی که هر کدام می‌توانند دارای زیرشاخه در فیلد children باشند.\n۵. خروجی فقط یک بلاک کد JSON معتبر باشد و هیچ متن اضافی ننویس.\n\n[متن کتاب یا مقاله شما در اینجا]`
-        : `Please analyze the text below and convert it into a structured hierarchical Mind Map in valid JSON format.\n\nOutput Rules:\n1. 'title': Main topic title.\n2. 'lang': Language code ("en" or "fa").\n3. 'emoji': Relevant emoji for each node.\n4. 'nodes': Array of primary branch objects, with nested 'children' arrays.\n5. Output ONLY the raw valid JSON code block without conversational text.\n\n[Paste your book/article text here]`;
+      const promptText = `Act as an elite Mind Mapping Specialist, Cognitive Information Architect, and visual structuring expert following Tony Buzan's official gold standard mind-mapping principles.
+
+Your objective is to thoroughly analyze the provided input text and transform it into a structured, highly coherent, hierarchical Mind Map in valid JSON format.
+
+---
+### 🧠 CORE METHODOLOGICAL & ARCHITECTURAL RULES:
+
+1. RADIANT THINKING & CENTRAL THEME:
+   - Identify the single overarching core concept of the entire text as the root 'title'.
+   - The root concept must represent the foundational anchor of the entire map.
+
+2. KEYWORD POWER & CONCISE PHRASING (CRUCIAL):
+   - Do NOT output long, narrative, exhausting sentences or paragraphs.
+   - Condense every node into 1 to 4 punchy, high-impact keywords/conceptual anchors.
+   - Maintain clarity, punchiness, and high readability.
+
+3. COGNITIVE CHUNKING & MILLER'S LAW (7±2 RULE):
+   - Divide the main core topic into a maximum of 5 to 7 primary branches ('nodes').
+   - Avoid cognitive overload while covering 100% of the key themes of the text.
+
+4. HIERARCHICAL DEPTH (GENERAL TO SPECIFIC):
+   - Level 1: Central Core Topic ('title', 'emoji')
+   - Level 2: Primary Pillars / Chapters ('nodes')
+   - Level 3: Supporting Concepts / Subtopics ('children')
+   - Level 4: Specific Details / Key Takeaways ('children')
+
+5. DUAL-CODING & VISUAL ANCHORS ('emoji'):
+   - Assign a distinct, highly relevant, and visually intuitive single emoji to EVERY single node and child branch.
+
+6. LANGUAGE & BIDIRECTIONAL ORIENTATION ('lang'):
+   - Set 'lang' to "fa" if the text is in Persian/Farsi, or "en" if the text is in English.
+
+---
+### 📋 MANDATORY JSON OUTPUT SCHEMA:
+
+{
+  "title": "Central Topic Title",
+  "lang": "fa" | "en",
+  "emoji": "🧠",
+  "nodes": [
+    {
+      "title": "Primary Pillar 1",
+      "emoji": "💡",
+      "children": [
+        {
+          "title": "Key Subtopic A",
+          "emoji": "⚙️",
+          "children": [
+            { "title": "Specific Detail 1", "emoji": "🔹" },
+            { "title": "Specific Detail 2", "emoji": "📈" }
+          ]
+        },
+        {
+          "title": "Key Subtopic B",
+          "emoji": "📊"
+        }
+      ]
+    }
+  ]
+}
+
+---
+### ⚠️ STRICT CONSTRAINTS:
+- Output ONLY the raw valid JSON code block enclosed in \`\`\`json ... \`\`\`.
+- Do NOT add conversational preambles, introductory text, explanations, or closing remarks.
+
+---
+### 📄 INPUT TEXT TO TRANSFORM:
+[Paste your book summary, article, lecture notes, or PDF text here]`;
       
       navigator.clipboard.writeText(promptText).then(() => {
         const btnText = document.getElementById('txt-copy-prompt');
@@ -2318,7 +2386,6 @@
         deleteBtn.style.pointerEvents = 'auto';
       }
 
-      // Update Single-Line button label in Inspector
       const lineBtn = document.getElementById('btn-toggle-line-mode');
       if (lineBtn && node) {
         lineBtn.innerText = node.singleLine 
@@ -2579,7 +2646,7 @@
     }
 
     /* =========================================================================
-       13. PERMANENT FIX: ACCURATE NON-OVERFLOW CANVAS EXPORTER
+       13. PERMANENT FIX: TRUE VERTICALLY & HORIZONTALLY CENTERED CANVAS EXPORTER
        ========================================================================= */
     function drawCanvasRoundedRect(ctx, x, y, width, height, radius) {
       ctx.beginPath();
@@ -2595,41 +2662,41 @@
       ctx.closePath();
     }
 
-    function wrapAndDrawCanvasText(ctx, text, x, y, maxWidth, lineHeight, isSingleLine) {
+    /**
+     * Splits a text paragraph into strictly fitting lines within maxWidth on Canvas.
+     */
+    function calculateWrappedLines(ctx, text, maxWidth, isSingleLine) {
       if (isSingleLine) {
-        ctx.fillText(text, x, y);
-        return y + lineHeight;
+        return [text];
       }
+      const paragraphs = (text || '').split('\n');
+      const lines = [];
 
-      const paragraphs = text.split('\n');
-      let currentY = y;
-      
       paragraphs.forEach(para => {
         const words = para.split(' ');
         let currentLine = '';
-        
+
         for (let n = 0; n < words.length; n++) {
           const testLine = currentLine + (currentLine ? ' ' : '') + words[n];
           const metrics = ctx.measureText(testLine);
           if (metrics.width > maxWidth && n > 0) {
-            ctx.fillText(currentLine, x, currentY);
+            lines.push(currentLine);
             currentLine = words[n];
-            currentY += lineHeight;
           } else {
             currentLine = testLine;
           }
         }
         if (currentLine) {
-          ctx.fillText(currentLine, x, currentY);
-          currentY += lineHeight;
+          lines.push(currentLine);
         }
       });
-      return currentY;
+
+      return lines.length > 0 ? lines : [''];
     }
 
     /**
-     * Highly accurate offline canvas rasterizer with dynamic text wrapping,
-     * safe clipping boundaries, and proper single/multi-line geometry handling.
+     * Highly accurate offline canvas rasterizer with exact mathematical vertical
+     * and horizontal centering of all content (emoji + image + wrapped text).
      */
     async function renderHighResMindMapCanvas() {
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -2721,7 +2788,7 @@
         ctx.beginPath(); ctx.arc(endX, endY, 3.5, 0, Math.PI * 2); ctx.fill();
       });
 
-      // Render nodes using live relative geometry matching the DOM
+      // Render nodes using dead-center mathematical vertical and horizontal alignment
       const zoom = state.transform.scale;
       const isRTL = state.lang === 'fa';
 
@@ -2735,7 +2802,7 @@
         const nx = node.x - minX + margin;
         const ny = node.y - minY + margin;
 
-        // Draw node card background
+        // Draw node background
         ctx.fillStyle = node.isRoot 
           ? (state.isDark ? '#1e293b' : '#ffffff') 
           : (state.isDark ? '#18181b' : '#ffffff');
@@ -2750,66 +2817,82 @@
         ctx.fill();
         ctx.stroke();
 
+        // 1. Calculate Content Stack Dimensions for Dead-Center Vertical Alignment
+        const maxTextW = nw - 24;
+        const fontStr = node.isRoot 
+          ? '700 14.5px system-ui, -apple-system, BlinkMacSystemFont, sans-serif'
+          : '600 13px system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+        const lineHeight = node.isRoot ? 20 : 18;
+
+        ctx.font = fontStr;
+        const wrappedLines = calculateWrappedLines(ctx, node.text || '', maxTextW, node.singleLine);
+        const textBlockHeight = wrappedLines.length * lineHeight;
+
+        let emojiHeight = 0;
+        if (node.emoji) emojiHeight = 22 + 4; // emoji size + gap
+
+        let imgH = 0;
+        let imgW = 0;
+        let imgRelX = 12;
+        let loadedImgObj = null;
+
+        const imgEl = el.querySelector('.node-img-wrapper img');
+        if (imgEl && node.image) {
+          const imgRect = imgEl.getBoundingClientRect();
+          imgW = imgRect.width / zoom;
+          imgH = imgRect.height / zoom;
+          imgRelX = (imgRect.left - nodeRect.left) / zoom;
+
+          loadedImgObj = await new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = node.image;
+          });
+        }
+
+        const totalContentHeight = emojiHeight + (imgH ? imgH + 8 : 0) + textBlockHeight;
+
+        // Content Start Y perfectly centered within node box (Top Margin === Bottom Margin)
+        let curY = ny + Math.max(6, (nh - totalContentHeight) / 2);
+
         // Safety clipping
         ctx.save();
         drawCanvasRoundedRect(ctx, nx + 1, ny + 1, nw - 2, nh - 2, node.isRoot ? 17 : 13);
         ctx.clip();
 
-        // Render emoji
-        const iconEl = el.querySelector('.node-icon');
-        if (iconEl && node.emoji) {
-          const iconRect = iconEl.getBoundingClientRect();
-          const relX = (iconRect.left - nodeRect.left + iconRect.width / 2) / zoom;
-          const relY = (iconRect.top - nodeRect.top + iconRect.height * 0.8) / zoom;
+        // Draw Emoji
+        if (node.emoji) {
           ctx.font = '20px system-ui, -apple-system, sans-serif';
           ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
           ctx.direction = isRTL ? 'rtl' : 'ltr';
           ctx.fillStyle = state.isDark ? '#f4f4f5' : '#09090b';
-          ctx.fillText(node.emoji, nx + relX, ny + relY);
+          ctx.fillText(node.emoji, nx + nw / 2, curY);
+          curY += emojiHeight;
         }
 
-        // Render image
-        const imgEl = el.querySelector('.node-img-wrapper img');
-        if (imgEl && node.image) {
-          const imgRect = imgEl.getBoundingClientRect();
-          const relX = (imgRect.left - nodeRect.left) / zoom;
-          const relY = (imgRect.top - nodeRect.top) / zoom;
-          const relW = imgRect.width / zoom;
-          const relH = imgRect.height / zoom;
-
-          await new Promise((resolve) => {
-            const img = new Image();
-            img.onload = () => {
-              ctx.save();
-              drawCanvasRoundedRect(ctx, nx + relX, ny + relY, relW, relH, 8);
-              ctx.clip();
-              ctx.drawImage(img, nx + relX, ny + relY, relW, relH);
-              ctx.restore();
-              resolve();
-            };
-            img.onerror = resolve;
-            img.src = node.image;
-          });
+        // Draw Image
+        if (loadedImgObj && imgH > 0) {
+          ctx.save();
+          drawCanvasRoundedRect(ctx, nx + imgRelX, curY, imgW, imgH, 8);
+          ctx.clip();
+          ctx.drawImage(loadedImgObj, nx + imgRelX, curY, imgW, imgH);
+          ctx.restore();
+          curY += imgH + 8;
         }
 
-        // Render text
-        const textEl = el.querySelector('.node-text-content');
-        if (textEl) {
-          const textRect = textEl.getBoundingClientRect();
-          const relX = (textRect.left - nodeRect.left + textRect.width / 2) / zoom;
-          const relY = (textRect.top - nodeRect.top + 13) / zoom;
-          const maxTextW = nw - 24;
+        // Draw Text with absolute vertical & horizontal symmetry
+        ctx.font = fontStr;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.direction = isRTL ? 'rtl' : 'ltr';
+        ctx.fillStyle = state.isDark ? '#f4f4f5' : '#09090b';
 
-          ctx.font = node.isRoot 
-            ? '700 14.5px system-ui, -apple-system, BlinkMacSystemFont, sans-serif'
-            : '600 13px system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
-            
-          ctx.textAlign = 'center';
-          ctx.direction = isRTL ? 'rtl' : 'ltr';
-          ctx.fillStyle = state.isDark ? '#f4f4f5' : '#09090b';
-
-          wrapAndDrawCanvasText(ctx, node.text || '', nx + relX, ny + relY, maxTextW, node.isRoot ? 20 : 18, node.singleLine);
-        }
+        wrappedLines.forEach(line => {
+          ctx.fillText(line, nx + nw / 2, curY);
+          curY += lineHeight;
+        });
 
         ctx.restore();
       }
