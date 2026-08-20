@@ -1,0 +1,2505 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mind Map Studio</title>
+
+  <!-- =========================================================================
+       100% OFFLINE & STANDALONE EMBEDDED STYLESHEET (ZERO EXTERNAL CDNS)
+       ========================================================================= -->
+  <style>
+    /* CSS reset and universal box-sizing */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Universal fallback font stacks for English (LTR) and Persian (RTL) */
+    [dir="ltr"] * {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    [dir="rtl"] * {
+      font-family: 'Vazirmatn', 'Vazir', 'Segoe UI', Tahoma, Arial, sans-serif;
+    }
+
+    /* CSS variable definitions for Light (Default) and Dark themes */
+    :root {
+      --bg-canvas: #fafafa;
+      --grid-dot: rgba(0, 0, 0, 0.06);
+      --node-bg: #ffffff;
+      --node-border: #e4e4e7;
+      --node-shadow: rgba(0, 0, 0, 0.04);
+      --text-main: #09090b;
+      --text-muted: #71717a;
+      --panel-bg: #ffffff;
+      --panel-border: #e4e4e7;
+      --primary-accent: #0284c7;
+    }
+
+    .dark {
+      --bg-canvas: #09090b;
+      --grid-dot: rgba(255, 255, 255, 0.05);
+      --node-bg: #18181b;
+      --node-border: #27272a;
+      --node-shadow: rgba(0, 0, 0, 0.5);
+      --text-main: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --panel-bg: #18181b;
+      --panel-border: #27272a;
+      --primary-accent: #38bdf8;
+    }
+
+    /* Main application body viewport */
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* Subtle dot-grid canvas background texture */
+    .canvas-grid-bg {
+      background-color: var(--bg-canvas);
+      background-size: 24px 24px;
+      background-image: radial-gradient(circle, var(--grid-dot) 1.5px, transparent 1.5px);
+    }
+
+    /* Standard floating panel container */
+    .panel-box {
+      background-color: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Minimalist interactive node card */
+    .mind-node {
+      background-color: var(--node-bg);
+      border: 1.5px solid var(--node-border);
+      box-shadow: 0 4px 12px var(--node-shadow);
+      border-radius: 14px;
+      touch-action: none;
+      z-index: 10;
+      position: absolute;
+      cursor: grab;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 18px;
+      min-width: 160px;
+      max-width: 280px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .mind-node:active {
+      cursor: grabbing;
+    }
+
+    .mind-node:hover {
+      border-color: #71717a;
+    }
+
+    .mind-node.selected {
+      border-color: var(--primary-accent) !important;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25), 0 6px 16px var(--node-shadow) !important;
+      z-index: 20;
+    }
+
+    .mind-node.is-editing {
+      border-color: var(--primary-accent) !important;
+      box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.3) !important;
+    }
+
+    .mind-node.root-node {
+      border-width: 2px !important;
+    }
+
+    /* Bi-directional, strictly oriented node text */
+    .node-text-content {
+      unicode-bidi: isolate;
+      text-align: center;
+      white-space: pre-wrap;
+      word-break: break-word;
+      outline: none;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.45;
+      width: 100%;
+    }
+
+    .node-text-content:empty:before {
+      content: attr(data-placeholder);
+      color: var(--text-muted);
+    }
+
+    /* UI button styles */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-main);
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(125, 125, 125, 0.1);
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn-primary {
+      background-color: #0284c7;
+      color: #ffffff !important;
+    }
+
+    .btn-primary:hover {
+      background-color: #0369a1;
+    }
+
+    .btn-icon {
+      padding: 6px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-icon:hover {
+      color: var(--text-main);
+      background-color: rgba(125, 125, 125, 0.1);
+    }
+
+    .divider-v {
+      width: 1px;
+      height: 20px;
+      background-color: var(--panel-border);
+      margin: 0 4px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .transition-overlay {
+      transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Context menu item styling */
+    .context-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-main);
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.1s ease;
+    }
+
+    .context-menu-item:hover {
+      background: rgba(125, 125, 125, 0.12);
+    }
+  </style>
+</head>
+<body class="canvas-grid-bg">
+
+  <!-- =========================================================================
+       INITIAL LAUNCH SPLASH LOADING SCREEN
+       ========================================================================= -->
+  <div id="splash-screen" style="position: fixed; inset: 0; z-index: 9999; background-color: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease;">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+      <div style="width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #0ea5e9, #6366f1); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px rgba(14, 165, 233, 0.35);">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></svg>
+      </div>
+      <div style="text-align: center;">
+        <h1 style="font-size: 16px; font-weight: 700; color: #09090b;" id="splash-title">Mind Map Studio</h1>
+        <p style="font-size: 12px; color: #71717a; margin-top: 4px;" id="splash-status">Initializing local engine...</p>
+      </div>
+      <div style="width: 180px; height: 4px; background-color: #e4e4e7; border-radius: 999px; overflow: hidden; margin-top: 8px;">
+        <div id="splash-progress" style="height: 100%; width: 0%; background-color: #0284c7; border-radius: 999px; transition: width 0.3s ease;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       LANGUAGE SWITCHING FADE TRANSITION OVERLAY
+       ========================================================================= -->
+  <div id="lang-transition-overlay" class="transition-overlay" style="position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0;">
+    <div class="panel-box" style="padding: 12px 20px; gap: 12px; border-radius: 16px;">
+      <div style="width: 16px; height: 16px; border: 2px solid #0284c7; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite;"></div>
+      <span style="font-size: 12px; font-weight: 600;" id="txt-lang-switching">Updating language...</span>
+    </div>
+  </div>
+  <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+
+  <!-- =========================================================================
+       TOP APPLICATION TOOLBAR / HEADER
+       ========================================================================= -->
+  <header style="position: absolute; top: 16px; left: 16px; right: 16px; z-index: 40; display: flex; align-items: center; justify-content: space-between; pointer-events: none;">
+    
+    <!-- Branding -->
+    <div class="panel-box" style="pointer-events: auto; padding: 8px 14px; gap: 10px;">
+      <div style="width: 26px; height: 26px; border-radius: 8px; background: #09090b; display: flex; align-items: center; justify-content: center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></svg>
+      </div>
+      <h1 style="font-size: 13px; font-weight: 700; letter-spacing: -0.2px;" id="txt-app-title">Mind Map Studio</h1>
+    </div>
+
+    <!-- Main Toolbar Actions -->
+    <div class="panel-box" style="pointer-events: auto; padding: 6px 8px; gap: 4px;">
+      
+      <!-- Save Project -->
+      <button class="btn" onclick="openSaveModal()" title="Save Project (Ctrl+S)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <span id="btn-save-project">Save</span>
+      </button>
+
+      <!-- Open Project -->
+      <label class="btn" style="cursor: pointer;" title="Open Saved Project">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span id="btn-open-project">Open</span>
+        <input type="file" accept=".pmm,.json" class="hidden" onchange="loadProjectFile(event)">
+      </label>
+
+      <div class="divider-v"></div>
+
+      <!-- Undo -->
+      <button class="btn-icon" onclick="undo()" title="Undo (Ctrl+Z)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+      </button>
+
+      <!-- Redo -->
+      <button class="btn-icon" onclick="redo()" title="Redo (Ctrl+Y)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+      </button>
+
+      <div class="divider-v"></div>
+
+      <!-- Add Child Sub-node -->
+      <button class="btn btn-primary" onclick="addChildNodeSmart()" title="Add Child Node (Tab)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span id="btn-add-child">Sub-node</span>
+      </button>
+
+      <!-- Add Sibling Node -->
+      <button class="btn" onclick="addSiblingNode()" title="Add Sibling Node (Shift+Enter)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+        <span id="btn-add-sibling">Sibling</span>
+      </button>
+
+      <div class="divider-v"></div>
+
+      <!-- Connector Line Style Selector -->
+      <div style="display: flex; align-items: center; background: rgba(125, 125, 125, 0.08); padding: 2px; border-radius: 8px; gap: 2px;">
+        <button class="btn" style="padding: 4px 8px; font-size: 11px;" onclick="setLineStyle('curved')" id="btn-line-curved">Curved</button>
+        <button class="btn" style="padding: 4px 8px; font-size: 11px;" onclick="setLineStyle('stepped')" id="btn-line-stepped">Stepped</button>
+        <button class="btn" style="padding: 4px 8px; font-size: 11px;" onclick="setLineStyle('straight')" id="btn-line-straight">Straight</button>
+      </div>
+
+      <div class="divider-v"></div>
+
+      <!-- Delete Node (Disabled for Root) -->
+      <button class="btn-icon" id="btn-delete-node" onclick="requestDeleteNode(state.selectedNodeId)" title="Delete Selected Node (Delete)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+
+      <!-- Auto Balance & Center -->
+      <button class="btn-icon" onclick="autoLayoutBalancedTree()" title="Auto Balance & Center (Sparkles)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+      </button>
+
+      <div class="divider-v"></div>
+
+      <!-- Export Image -->
+      <button class="btn" onclick="exportAsImage()" title="Export High-Res PNG">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span>PNG</span>
+      </button>
+
+      <!-- Export PDF Dialog -->
+      <button class="btn" onclick="openPdfModal()" title="Export PDF Document (Ctrl+P)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>PDF</span>
+      </button>
+    </div>
+
+    <!-- Right Controls: Info, Language, Shortcuts, Theme (Default Light), Zoom -->
+    <div class="panel-box" style="pointer-events: auto; padding: 6px 8px; gap: 4px;">
+      <button class="btn-icon" onclick="openFontInfoModal()" title="Local Privacy & Fonts">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      </button>
+
+      <button class="btn" onclick="toggleLanguage()" style="font-weight: 700; color: #0284c7;" title="Switch Language">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+        <span id="txt-lang-badge">FA</span>
+      </button>
+
+      <div class="divider-v"></div>
+
+      <button class="btn-icon" onclick="openShortcutsModal()" title="Keyboard Shortcuts (?)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>
+      </button>
+
+      <!-- Theme Switcher (Starts with Moon icon in Light Mode) -->
+      <button class="btn-icon" onclick="toggleTheme()" title="Toggle Dark / Light Theme (Ctrl+D)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+
+      <div class="divider-v"></div>
+
+      <button class="btn-icon" onclick="zoomIn()" title="Zoom In">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </button>
+      <span style="font-size: 11px; font-weight: 700; width: 34px; text-align: center; color: var(--text-muted);" id="zoom-level">100%</span>
+      <button class="btn-icon" onclick="zoomOut()" title="Zoom Out">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </button>
+      <button class="btn-icon" onclick="resetZoom()" title="Reset to Center View">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       MAIN INTERACTIVE CANVAS (INFINITE VIEWPORT WITH PAN & ZOOM)
+       ========================================================================= -->
+  <main id="viewport" style="flex: 1; width: 100%; height: 100%; position: relative; cursor: grab; overflow: hidden;">
+    <div id="canvas" style="position: absolute; inset: 0; transform-origin: 0 0;">
+      <svg id="svg-layer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 1;"></svg>
+      <div id="nodes-container" style="position: absolute; top: 0; left: 0; z-index: 10;"></div>
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       CUSTOM NODE CONTEXT MENU (OPENS ON RIGHT-CLICKING A NODE)
+       ========================================================================= -->
+  <div id="node-context-menu" class="hidden" style="position: fixed; z-index: 1000; width: 190px; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); padding: 6px; display: flex; flex-direction: column; gap: 2px;">
+    <div class="context-menu-item" onclick="contextAction('edit')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      <span id="ctx-edit">Edit Text</span>
+    </div>
+    <div class="context-menu-item" onclick="contextAction('add-child')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span id="ctx-add-child">Add Sub-node</span>
+    </div>
+    <div class="context-menu-item" onclick="contextAction('add-sibling')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+      <span id="ctx-add-sibling">Add Sibling</span>
+    </div>
+    <div style="height: 1px; background: var(--panel-border); margin: 4px 0;"></div>
+    <div class="context-menu-item" onclick="contextAction('icon')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      <span id="ctx-icon">Add Icon</span>
+    </div>
+    <div class="context-menu-item" id="ctx-remove-icon-btn" onclick="contextAction('remove-icon')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <span id="ctx-remove-icon">Remove Icon</span>
+    </div>
+    <div class="context-menu-item" onclick="contextAction('image')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <span id="ctx-image">Attach Image</span>
+    </div>
+    <div id="ctx-delete-divider" style="height: 1px; background: var(--panel-border); margin: 4px 0;"></div>
+    <div class="context-menu-item" id="ctx-delete-btn" style="color: #f43f5e;" onclick="contextAction('delete')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      <span id="ctx-delete">Delete Node</span>
+    </div>
+  </div>
+
+  <input type="file" id="node-img-file-input" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+
+  <!-- =========================================================================
+       SELECTED NODE FLOATING INSPECTOR
+       ========================================================================= -->
+  <div id="node-inspector" class="panel-box hidden" style="position: absolute; bottom: 24px; left: 0; right: 0; margin: auto; width: fit-content; z-index: 40; padding: 8px 14px; gap: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;" id="lbl-color">Color:</span>
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <button onclick="setNodeColor('#0ea5e9')" style="width: 16px; height: 16px; border-radius: 50%; background: #0ea5e9; border: none; cursor: pointer;"></button>
+        <button onclick="setNodeColor('#10b981')" style="width: 16px; height: 16px; border-radius: 50%; background: #10b981; border: none; cursor: pointer;"></button>
+        <button onclick="setNodeColor('#f59e0b')" style="width: 16px; height: 16px; border-radius: 50%; background: #f59e0b; border: none; cursor: pointer;"></button>
+        <button onclick="setNodeColor('#ec4899')" style="width: 16px; height: 16px; border-radius: 50%; background: #ec4899; border: none; cursor: pointer;"></button>
+        <button onclick="setNodeColor('#8b5cf6')" style="width: 16px; height: 16px; border-radius: 50%; background: #8b5cf6; border: none; cursor: pointer;"></button>
+        <button onclick="setNodeColor('#71717a')" style="width: 16px; height: 16px; border-radius: 50%; background: #71717a; border: none; cursor: pointer;"></button>
+      </div>
+    </div>
+
+    <div class="divider-v"></div>
+
+    <button class="btn" onclick="startEditingNode(state.selectedNodeId)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      <span id="btn-edit-text">Edit (Enter)</span>
+    </button>
+
+    <button class="btn" onclick="openIconModal()" title="Add Icon (Ctrl+I)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      <span id="btn-add-icon">Icon</span>
+    </button>
+
+    <button class="btn" onclick="setNodeEmoji('')" style="color: #f43f5e;" title="Remove Icon (Alt+X)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <span id="btn-remove-icon">Remove Icon</span>
+    </button>
+
+    <div class="divider-v"></div>
+
+    <label class="btn" style="cursor: pointer;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <span id="btn-attach-image">Image</span>
+      <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+    </label>
+  </div>
+
+  <!-- =========================================================================
+       NODE DELETION CONFIRMATION DIALOG (FOR NODES WITH CHILDREN)
+       ========================================================================= -->
+  <div id="delete-confirm-modal" class="hidden" style="position: fixed; inset: 0; z-index: 850; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 16px;">
+    <div class="panel-box" style="width: 100%; max-width: 380px; flex-direction: column; padding: 20px; gap: 14px; border-radius: 16px;">
+      <div style="width: 100%; display: flex; align-items: center; gap: 8px;">
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(244,63,94,0.15); display: flex; align-items: center; justify-content: center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <h3 style="font-size: 13px; font-weight: 700;" id="txt-del-modal-title">Delete Node & Sub-branches</h3>
+      </div>
+      <p style="font-size: 11px; line-height: 1.5; color: var(--text-muted);" id="txt-del-modal-desc">This node has connected sub-branches. Deleting it will also remove all its child nodes. Do you want to proceed?</p>
+      <div style="width: 100%; display: flex; justify-content: flex-end; gap: 8px; padding-top: 6px;">
+        <button class="btn" onclick="closeDeleteConfirmModal()" id="btn-cancel-delete">Cancel</button>
+        <button class="btn" style="background: #f43f5e; color: #fff;" onclick="confirmDeleteWithChildren()" id="btn-confirm-delete">Delete All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       FULLSCREEN CINEMATIC IMAGE LIGHTBOX
+       ========================================================================= -->
+  <div id="image-viewer-modal" class="hidden" style="position: fixed; inset: 0; z-index: 900; background: rgba(0,0,0,0.92); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden;">
+    <div style="position: absolute; top: 20px; left: 24px; right: 24px; display: flex; align-items: center; justify-content: space-between; pointer-events: none; z-index: 10;">
+      <div class="panel-box" style="pointer-events: auto; padding: 6px 12px; gap: 8px; background: rgba(24,24,27,0.85); border-color: #27272a; color: #fff;">
+        <span style="font-size: 12px; font-weight: 700;" id="txt-image-viewer-title">Image Lightbox</span>
+        <span style="font-size: 10px; color: #a1a1aa;" id="viewer-scale-text">100%</span>
+      </div>
+
+      <div class="panel-box" style="pointer-events: auto; padding: 4px 6px; gap: 4px; background: rgba(24,24,27,0.85); border-color: #27272a;">
+        <button class="btn-icon" onclick="zoomViewerStep(1.25)" title="Zoom In"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+        <button class="btn-icon" onclick="zoomViewerStep(0.8)" title="Zoom Out"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+        <button class="btn-icon" onclick="resetViewerTransform()" title="Reset"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+        <button class="btn btn-primary" onclick="downloadActiveViewerImage()" style="padding: 4px 10px; font-size: 11px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span id="btn-download-img">Download</span>
+        </button>
+        <button class="btn-icon" onclick="closeImageViewer()" title="Close (Esc)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+
+    <div id="viewer-stage" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; cursor: grab;">
+      <img id="viewer-img-target" src="" style="max-width: none; will-change: transform; transition: transform 0.05s linear;" />
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       SAVE PROJECT MODAL
+       ========================================================================= -->
+  <div id="save-project-modal" class="hidden" style="position: fixed; inset: 0; z-index: 800; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 16px;">
+    <div class="panel-box" style="width: 100%; max-width: 360px; flex-direction: column; padding: 20px; gap: 16px; border-radius: 16px;">
+      <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px;">
+        <h3 style="font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span id="txt-save-modal-title">Save Project</span>
+        </h3>
+        <button class="btn-icon" onclick="closeSaveModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+
+      <div style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 11px; font-weight: 600; color: var(--text-muted);" id="lbl-project-name">Project Name:</label>
+        <input type="text" id="input-project-name" style="width: 100%; padding: 8px 12px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid var(--panel-border); background: var(--bg-canvas); color: var(--text-main); outline: none;" value="My_Mind_Map" />
+        <p style="font-size: 10px; color: var(--text-muted); line-height: 1.5;" id="txt-save-desc">Saves your project completely including all embedded images so you can continue anytime.</p>
+      </div>
+
+      <div style="width: 100%; display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px;">
+        <button class="btn" onclick="closeSaveModal()" id="btn-cancel-save">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmSaveEncryptedProject()" id="btn-confirm-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       CUSTOM PDF EXPORT MODAL
+       ========================================================================= -->
+  <div id="pdf-export-modal" class="hidden" style="position: fixed; inset: 0; z-index: 800; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 16px;">
+    <div class="panel-box" style="width: 100%; max-width: 360px; flex-direction: column; padding: 20px; gap: 16px; border-radius: 16px;">
+      <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px;">
+        <h3 style="font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span id="txt-pdf-modal-title">Export PDF Document</span>
+        </h3>
+        <button class="btn-icon" onclick="closePdfModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+
+      <div style="width: 100%; display: flex; flex-direction: column; gap: 10px;">
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-muted);" id="lbl-pdf-name">Document Title:</label>
+          <input type="text" id="input-pdf-name" style="width: 100%; margin-top: 4px; padding: 8px 12px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid var(--panel-border); background: var(--bg-canvas); color: var(--text-main); outline: none;" value="MindMap_Document" />
+        </div>
+
+        <div>
+          <label style="font-size: 11px; font-weight: 600; color: var(--text-muted);" id="lbl-pdf-orientation">Orientation:</label>
+          <select id="select-pdf-orientation" style="width: 100%; margin-top: 4px; padding: 8px 12px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid var(--panel-border); background: var(--bg-canvas); color: var(--text-main); outline: none;">
+            <option value="auto">Auto (Best Fit)</option>
+            <option value="landscape">Landscape</option>
+            <option value="portrait">Portrait</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="width: 100%; display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px;">
+        <button class="btn" onclick="closePdfModal()" id="btn-cancel-pdf">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmExportPdf()" id="btn-confirm-pdf">Export PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       OFFLINE PRIVACY & SYSTEM FONTS MODAL
+       ========================================================================= -->
+  <div id="font-info-modal" class="hidden" style="position: fixed; inset: 0; z-index: 800; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 16px;">
+    <div class="panel-box" style="width: 100%; max-width: 420px; flex-direction: column; padding: 20px; gap: 14px; border-radius: 16px;">
+      <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px;">
+        <h3 style="font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span id="txt-font-modal-title">Offline Privacy & Typography</span>
+        </h3>
+        <button class="btn-icon" onclick="closeFontInfoModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+
+      <div style="font-size: 11px; line-height: 1.6; color: var(--text-main);" id="txt-font-modal-body"></div>
+
+      <div style="width: 100%; display: flex; justify-content: flex-end;">
+        <button class="btn btn-primary" onclick="closeFontInfoModal()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       KEYBOARD SHORTCUTS MODAL
+       ========================================================================= -->
+  <div id="shortcuts-modal" class="hidden" style="position: fixed; inset: 0; z-index: 800; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 16px;">
+    <div class="panel-box" style="width: 100%; max-width: 440px; flex-direction: column; padding: 20px; gap: 14px; border-radius: 16px;">
+      <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px;">
+        <h3 style="font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>
+          <span id="txt-shortcuts-title">Keyboard Shortcuts</span>
+        </h3>
+        <button class="btn-icon" onclick="closeShortcutsModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+
+      <div style="width: 100%; display: flex; flex-direction: column; gap: 8px;" id="shortcuts-list-container"></div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       ICON & CUSTOM EMOJI MODAL
+       ========================================================================= -->
+  <div id="icon-modal" class="hidden" style="position: fixed; inset: 0; z-index: 800; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 16px;">
+    <div class="panel-box" style="width: 100%; max-width: 440px; max-height: 85vh; flex-direction: column; padding: 20px; gap: 14px; border-radius: 16px;">
+      <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--panel-border); padding-bottom: 10px;">
+        <h3 style="font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+          <span id="txt-icon-title">Icon & Emoji Library</span>
+        </h3>
+        <button class="btn-icon" onclick="closeIconModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+
+      <div style="width: 100%; display: flex; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--panel-border);">
+        <input type="text" id="custom-emoji-input" style="flex: 1; padding: 6px 12px; font-size: 12px; border-radius: 8px; border: 1px solid var(--panel-border); background: var(--bg-canvas); color: var(--text-main); outline: none;" placeholder="Paste or type any emoji..." maxlength="4" />
+        <button class="btn btn-primary" onclick="applyCustomEmoji()" id="btn-apply-custom-emoji">Apply</button>
+      </div>
+
+      <div style="width: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px;">
+        <div>
+          <span style="font-size: 10px; font-weight: 700; color: var(--text-muted);" id="lbl-icon-cat1">Tech & Ideas</span>
+          <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 6px;">
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('💡')">💡</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('🚀')">🚀</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('💻')">💻</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('⚙️')">⚙️</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('🧠')">🧠</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('🌐')">🌐</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('⚡')">⚡</button>
+          </div>
+        </div>
+
+        <div>
+          <span style="font-size: 10px; font-weight: 700; color: var(--text-muted);" id="lbl-icon-cat2">Business & Goals</span>
+          <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 6px;">
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('🎯')">🎯</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('💼')">💼</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('📊')">📊</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('🏆')">🏆</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('📌')">📌</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('📅')">📅</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('📝')">📝</button>
+          </div>
+        </div>
+
+        <div>
+          <span style="font-size: 10px; font-weight: 700; color: var(--text-muted);" id="lbl-icon-cat3">Status & Badges</span>
+          <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 6px;">
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('✅')">✅</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('❌')">❌</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('⚠️')">⚠️</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('🔥')">🔥</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('⭐')">⭐</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('🔒')">🔒</button>
+            <button class="btn-icon" style="font-size: 18px; padding: 6px;" onclick="selectEmoji('✨')">✨</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       VANILLA JAVASCRIPT APPLICATION CORE (ZERO DEPENDENCY / OFFLINE)
+       ========================================================================= -->
+  <script>
+    /* =========================================================================
+       1. CRYPTO STORAGE & LOCAL CIPHER (.PMM FILE)
+       ========================================================================= */
+    const PMM_SIGNATURE = "PRO_MINDMAP_ENCRYPTED_V2";
+    const PMM_SALT = [0x50, 0x4D, 0x4D, 0x24, 0x39, 0xAA, 0xBC, 0x17, 0xFE, 0x88, 0x42, 0x19];
+
+    function encryptPayload(dataObj) {
+      const jsonStr = JSON.stringify(dataObj);
+      const encoder = new TextEncoder();
+      const encodedBytes = encoder.encode(jsonStr);
+      const encrypted = new Uint8Array(encodedBytes.length);
+      for (let i = 0; i < encodedBytes.length; i++) {
+        encrypted[i] = encodedBytes[i] ^ PMM_SALT[i % PMM_SALT.length] ^ ((i * 7) & 0xFF);
+      }
+      let binary = '';
+      for (let i = 0; i < encrypted.length; i++) {
+        binary += String.fromCharCode(encrypted[i]);
+      }
+      return JSON.stringify({
+        signature: PMM_SIGNATURE,
+        version: "2.0",
+        created: new Date().toISOString(),
+        payload: btoa(binary)
+      }, null, 2);
+    }
+
+    function decryptPayload(rawText) {
+      const container = JSON.parse(rawText);
+      if (container.signature !== PMM_SIGNATURE) {
+        if (container.nodes && Array.isArray(container.nodes)) return container;
+        throw new Error("Invalid or corrupted project file!");
+      }
+      const binary = atob(container.payload);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const decrypted = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) {
+        decrypted[i] = bytes[i] ^ PMM_SALT[i % PMM_SALT.length] ^ ((i * 7) & 0xFF);
+      }
+      const decoder = new TextDecoder();
+      return JSON.parse(decoder.decode(decrypted));
+    }
+
+    /* =========================================================================
+       2. BILINGUAL DICTIONARY
+       ========================================================================= */
+    const i18n = {
+      en: {
+        appTitle: 'Mind Map Studio',
+        splashTitle: 'Mind Map Studio',
+        splashStatus: 'Initializing local workspace...',
+        saveBtn: 'Save',
+        openBtn: 'Open',
+        addChildBtn: 'Sub-node',
+        addSiblingBtn: 'Sibling',
+        curved: 'Curved',
+        stepped: 'Stepped',
+        straight: 'Straight',
+        langBadge: 'FA',
+        colorLbl: 'Color:',
+        editText: 'Edit (Enter)',
+        addIcon: 'Icon',
+        removeIcon: 'Remove Icon',
+        attachImage: 'Image',
+        imageViewerTitle: 'Image Lightbox',
+        downloadImage: 'Download',
+        saveModalTitle: 'Save Project',
+        projectNameLbl: 'Project Name:',
+        saveDesc: 'Saves your project completely including all embedded images so you can continue anytime.',
+        cancel: 'Cancel',
+        downloadSave: 'Save',
+        pdfModalTitle: 'Export PDF Document',
+        pdfNameLbl: 'Document Title:',
+        pdfOrientationLbl: 'Orientation:',
+        pdfConfirmBtn: 'Export PDF',
+        shortcutsTitle: 'Keyboard Shortcuts',
+        iconTitle: 'Icon & Emoji Library',
+        iconCat1: 'Tech & Ideas',
+        iconCat2: 'Business & Goals',
+        iconCat3: 'Status & Badges',
+        defaultRootText: 'Main Topic',
+        defaultNewChild: 'New Topic',
+        defaultNewSibling: 'Sibling Branch',
+        applyCustomEmoji: 'Apply',
+        customEmojiPlaceholder: 'Paste or type any emoji...',
+        langSwitching: 'Updating language...',
+        fontModalTitle: 'Offline Privacy & Typography',
+        fontModalBody: `
+          <p><strong>100% Offline & Private:</strong> This application executes entirely on your device with zero cloud tracking and zero external API calls.</p>
+          <p style="margin-top: 8px;"><strong>Recommended System Fonts:</strong> For optimal Persian rendering, having the <em>Vazirmatn</em> font installed on your system is recommended. For English, standard system fonts (<em>Inter, Segoe UI, Roboto</em>) are utilized automatically.</p>
+        `,
+        delModalTitle: 'Delete Node & Sub-branches',
+        delModalDesc: 'This node has connected sub-branches. Deleting it will also remove all its child nodes. Do you want to proceed?',
+        delConfirmBtn: 'Delete All',
+        ctxEdit: 'Edit Text',
+        ctxAddChild: 'Add Sub-node',
+        ctxAddSibling: 'Add Sibling',
+        ctxIcon: 'Add Icon',
+        ctxRemoveIcon: 'Remove Icon',
+        ctxImage: 'Attach Image',
+        ctxDelete: 'Delete Node',
+        shortcuts: [
+          { name: 'Add Smart Sub-node (Right/Left)', key: 'Tab' },
+          { name: 'Add Sibling Node', key: 'Shift + Enter' },
+          { name: 'Edit Node Text', key: 'Enter or F2' },
+          { name: 'Finish Editing & Select Node', key: 'Escape' },
+          { name: 'Undo / Redo', key: 'Ctrl + Z / Ctrl + Y' },
+          { name: 'Open Icon Library', key: 'Ctrl + I' },
+          { name: 'Remove Icon from Node', key: 'Alt + X' },
+          { name: 'Navigate Nodes in 2D', key: '↑ ↓ ← →' },
+          { name: 'Delete Selected Node', key: 'Delete' },
+          { name: 'Save Project File', key: 'Ctrl + S' },
+          { name: 'Export PDF Document', key: 'Ctrl + P' },
+          { name: 'Toggle Dark / Light Mode', key: 'Ctrl + D' }
+        ]
+      },
+      fa: {
+        appTitle: 'مایند مپ استودیو',
+        splashTitle: 'مایند مپ استودیو',
+        splashStatus: 'در حال آماده‌سازی محیط استودیو...',
+        saveBtn: 'ذخیره',
+        openBtn: 'باز کردن',
+        addChildBtn: 'زیرشاخه',
+        addSiblingBtn: 'هم‌سطح',
+        curved: 'منحنی',
+        stepped: 'شکسته',
+        straight: 'مستقیم',
+        langBadge: 'EN',
+        colorLbl: 'رنگ خط:',
+        editText: 'ویرایش متن',
+        addIcon: 'آیکون',
+        removeIcon: 'حذف آیکون',
+        attachImage: 'عکس',
+        imageViewerTitle: 'مشاهده تمام‌صفحه تصویر',
+        downloadImage: 'دانلود تصویر',
+        saveModalTitle: 'ذخیره پروژه',
+        projectNameLbl: 'نام پروژه:',
+        saveDesc: 'پروژه شما را به همراه تمامی تصاویر ذخیره می‌کند تا بتوانید در هر زمان آن را ادامه دهید.',
+        cancel: 'انصراف',
+        downloadSave: 'ذخیره',
+        pdfModalTitle: 'خروجی سند PDF',
+        pdfNameLbl: 'عنوان فایل:',
+        pdfOrientationLbl: 'جهت صفحه:',
+        pdfConfirmBtn: 'تولید فایل PDF',
+        shortcutsTitle: 'کلیدهای میانبر سریع',
+        iconTitle: 'کتابخانه آیکون و ایموجی',
+        iconCat1: 'تکنولوژی و ایده',
+        iconCat2: 'کسب‌و‌کار و هدف',
+        iconCat3: 'علائم وضعیت',
+        defaultRootText: 'موضوع اصلی',
+        defaultNewChild: 'موضوع جدید',
+        defaultNewSibling: 'شاخه هم‌سطح',
+        applyCustomEmoji: 'اعمال',
+        customEmojiPlaceholder: 'هر ایموجی یا نمادی را تایپ یا Paste کنید...',
+        langSwitching: 'در حال تغییر زبان...',
+        fontModalTitle: 'حریم خصوصی آفلاین و فونت سیستم',
+        fontModalBody: `
+          <p><strong>۱۰۰٪ محلی و بدون اینترنت:</strong> این برنامه کاملاً روی مرورگر سیستم خودتان اجرا شده و هیچ اطلاعاتی به هیچ سرور یا API خارجی ارسال نمی‌شود.</p>
+          <p style="margin-top: 8px;"><strong>فونت‌های پیشنهادی سیستم:</strong> برای نمایش ایده‌آل متون فارسی، نصب بودن فونت <em>Vazirmatn</em> روی کامپیوتر پیشنهاد می‌شود. برای متون انگلیسی نیز فونت‌های استاندارد سیستم (مانند <em>Inter</em> و <em>Segoe UI</em>) به‌صورت خودکار استفاده می‌شوند.</p>
+        `,
+        delModalTitle: 'حذف نود و زیرشاخه‌ها',
+        delModalDesc: 'این نود دارای زیرشاخه است. با حذف آن، تمامی شاخه‌های متصل به آن نیز حذف خواهند شد. آیا ادامه می‌دهید؟',
+        delConfirmBtn: 'حذف همه',
+        ctxEdit: 'ویرایش متن',
+        ctxAddChild: 'افزودن زیرشاخه',
+        ctxAddSibling: 'افزودن شاخه هم‌سطح',
+        ctxIcon: 'افزودن آیکون',
+        ctxRemoveIcon: 'حذف آیکون',
+        ctxImage: 'افزودن تصویر',
+        ctxDelete: 'حذف نود',
+        shortcuts: [
+          { name: 'افزودن زیرشاخه هوشمند (راست / چپ)', key: 'Tab' },
+          { name: 'افزودن شاخه هم‌سطح', key: 'Shift + Enter' },
+          { name: 'ویرایش متن نود', key: 'Enter یا F2' },
+          { name: 'اتمام ویرایش و انتخاب نود', key: 'Escape' },
+          { name: 'بازگشت به قبل / بعد (Undo / Redo)', key: 'Ctrl + Z / Ctrl + Y' },
+          { name: 'باز کردن کتابخانه آیکون', key: 'Ctrl + I' },
+          { name: 'حذف آیکون از نود فعال', key: 'Alt + X' },
+          { name: 'جابه‌جایی انتخاب نودها', key: '↑ ↓ ← →' },
+          { name: 'حذف نود انتخابی', key: 'Delete' },
+          { name: 'ذخیره امن فایل پروژه', key: 'Ctrl + S' },
+          { name: 'خروجی مستقیم سند PDF', key: 'Ctrl + P' },
+          { name: 'تغییر تم دارک / لایت', key: 'Ctrl + D' }
+        ]
+      }
+    };
+
+    /* =========================================================================
+       3. GLOBAL APPLICATION STATE & UNDO/REDO HISTORY MANAGER
+       ========================================================================= */
+    let state = {
+      lang: 'en',
+      isDark: false, // Default theme: Light Mode
+      lineStyle: 'curved',
+      editingNodeId: null,
+      contextNodeId: null,
+      pendingDeleteNodeId: null,
+      // Starts with ONLY ONE ROOT NODE on fresh startup
+      nodes: [
+        {
+          id: 'root',
+          parentId: null,
+          text: 'Main Topic',
+          x: 0,
+          y: 0,
+          color: '#0ea5e9',
+          emoji: null,
+          image: null,
+          isRoot: true
+        }
+      ],
+      selectedNodeId: 'root',
+      transform: { x: window.innerWidth / 2, y: window.innerHeight / 2, scale: 1 },
+      isPanning: false,
+      panStart: { x: 0, y: 0 }
+    };
+
+    // Deep cloned Undo/Redo History Manager
+    const historyManager = {
+      stack: [],
+      index: -1,
+      maxSize: 50,
+      push() {
+        const snapshot = JSON.stringify({
+          nodes: state.nodes,
+          lineStyle: state.lineStyle,
+          selectedNodeId: state.selectedNodeId
+        });
+        if (this.index >= 0 && this.stack[this.index] === snapshot) return;
+        this.stack = this.stack.slice(0, this.index + 1);
+        this.stack.push(snapshot);
+        if (this.stack.length > this.maxSize) {
+          this.stack.shift();
+        } else {
+          this.index++;
+        }
+      },
+      undo() {
+        if (this.index > 0) {
+          this.index--;
+          const snapshot = JSON.parse(this.stack[this.index]);
+          state.nodes = JSON.parse(JSON.stringify(snapshot.nodes));
+          state.lineStyle = snapshot.lineStyle;
+          state.selectedNodeId = snapshot.selectedNodeId || 'root';
+          autoLayoutBalancedTree();
+          autoSave();
+        }
+      },
+      redo() {
+        if (this.index < this.stack.length - 1) {
+          this.index++;
+          const snapshot = JSON.parse(this.stack[this.index]);
+          state.nodes = JSON.parse(JSON.stringify(snapshot.nodes));
+          state.lineStyle = snapshot.lineStyle;
+          state.selectedNodeId = snapshot.selectedNodeId || 'root';
+          autoLayoutBalancedTree();
+          autoSave();
+        }
+      }
+    };
+
+    function undo() { historyManager.undo(); }
+    function redo() { historyManager.redo(); }
+
+    let viewerState = {
+      scale: 1,
+      x: 0,
+      y: 0,
+      isDragging: false,
+      startX: 0,
+      startY: 0,
+      imgSrc: null
+    };
+
+    let draggingNodeId = null;
+    let dragOffset = { x: 0, y: 0 };
+
+    // DOM Element References
+    const viewport = document.getElementById('viewport');
+    const canvas = document.getElementById('canvas');
+    const nodesContainer = document.getElementById('nodes-container');
+    const svgLayer = document.getElementById('svg-layer');
+    const inspector = document.getElementById('node-inspector');
+    const iconModal = document.getElementById('icon-modal');
+    const shortcutsModal = document.getElementById('shortcuts-modal');
+    const fontInfoModal = document.getElementById('font-info-modal');
+    const saveProjectModal = document.getElementById('save-project-modal');
+    const pdfExportModal = document.getElementById('pdf-export-modal');
+    const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+    const imageViewerModal = document.getElementById('image-viewer-modal');
+    const viewerImgTarget = document.getElementById('viewer-img-target');
+    const viewerStage = document.getElementById('viewer-stage');
+    const nodeContextMenu = document.getElementById('node-context-menu');
+
+    /* =========================================================================
+       4. INITIALIZATION & LIFECYCLE CONTROLLERS
+       ========================================================================= */
+    function init() {
+      // Global context menu lock on canvas background
+      window.addEventListener('contextmenu', (e) => {
+        if (!e.target.closest('input') && !e.target.closest('.mind-node')) {
+          e.preventDefault();
+          closeContextMenu();
+        }
+      });
+
+      window.addEventListener('click', () => {
+        closeContextMenu();
+      });
+
+      runSplashScreenAnimation();
+
+      const savedProject = localStorage.getItem('pro_mindmap_autosave');
+      if (savedProject) {
+        try {
+          const parsed = JSON.parse(savedProject);
+          if (parsed.nodes && parsed.nodes.length) {
+            state.nodes = parsed.nodes;
+            if (parsed.lineStyle) state.lineStyle = parsed.lineStyle;
+            if (parsed.lang) state.lang = parsed.lang;
+            if (typeof parsed.isDark === 'boolean') state.isDark = parsed.isDark;
+          }
+        } catch (e) {
+          console.warn('Could not load auto-save', e);
+        }
+      }
+
+      applyLanguage(state.lang);
+      if (state.isDark) {
+        document.documentElement.classList.add('dark');
+        document.getElementById('theme-icon').innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.getElementById('theme-icon').innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+      }
+
+      // Seed initial history state
+      historyManager.push();
+
+      render();
+      setupEventListeners();
+      setupImageViewerEvents();
+      
+      setTimeout(() => {
+        autoLayoutBalancedTree();
+        resetZoom();
+      }, 150);
+    }
+
+    function runSplashScreenAnimation() {
+      const splash = document.getElementById('splash-screen');
+      const progress = document.getElementById('splash-progress');
+      const status = document.getElementById('splash-status');
+
+      progress.style.width = '40%';
+
+      setTimeout(() => {
+        progress.style.width = '80%';
+      }, 400);
+
+      setTimeout(() => {
+        progress.style.width = '100%';
+        status.innerText = state.lang === 'fa' ? 'استودیو آماده است...' : 'Ready...';
+      }, 900);
+
+      setTimeout(() => {
+        splash.style.opacity = '0';
+        setTimeout(() => {
+          splash.style.display = 'none';
+        }, 500);
+      }, 1300);
+    }
+
+    function autoSave() {
+      localStorage.setItem('pro_mindmap_autosave', JSON.stringify({
+        nodes: state.nodes,
+        lineStyle: state.lineStyle,
+        lang: state.lang,
+        isDark: state.isDark
+      }));
+    }
+
+    function toggleLanguage() {
+      const overlay = document.getElementById('lang-transition-overlay');
+      document.getElementById('txt-lang-switching').innerText = i18n[state.lang].langSwitching;
+      
+      overlay.style.opacity = '1';
+
+      setTimeout(() => {
+        state.lang = state.lang === 'en' ? 'fa' : 'en';
+        applyLanguage(state.lang);
+        autoLayoutBalancedTree();
+        autoSave();
+
+        setTimeout(() => {
+          overlay.style.opacity = '0';
+        }, 180);
+      }, 150);
+    }
+
+    function applyLanguage(lang) {
+      const t = i18n[lang];
+      document.documentElement.setAttribute('dir', lang === 'fa' ? 'rtl' : 'ltr');
+      document.documentElement.setAttribute('lang', lang);
+
+      document.getElementById('txt-app-title').innerText = t.appTitle;
+      document.getElementById('btn-save-project').innerText = t.saveBtn;
+      document.getElementById('btn-open-project').innerText = t.openBtn;
+      document.getElementById('btn-add-child').innerText = t.addChildBtn;
+      document.getElementById('btn-add-sibling').innerText = t.addSiblingBtn;
+      document.getElementById('btn-line-curved').innerText = t.curved;
+      document.getElementById('btn-line-stepped').innerText = t.stepped;
+      document.getElementById('btn-line-straight').innerText = t.straight;
+      document.getElementById('txt-lang-badge').innerText = t.langBadge;
+      
+      document.getElementById('lbl-color').innerText = t.colorLbl;
+      document.getElementById('btn-edit-text').innerText = t.editText;
+      document.getElementById('btn-add-icon').innerText = t.addIcon;
+      document.getElementById('btn-remove-icon').innerText = t.removeIcon;
+      document.getElementById('btn-attach-image').innerText = t.attachImage;
+
+      document.getElementById('txt-image-viewer-title').innerText = t.imageViewerTitle;
+      document.getElementById('btn-download-img').innerText = t.downloadImage;
+      document.getElementById('txt-save-modal-title').innerText = t.saveModalTitle;
+      document.getElementById('lbl-project-name').innerText = t.projectNameLbl;
+      document.getElementById('txt-save-desc').innerText = t.saveDesc;
+      document.getElementById('btn-cancel-save').innerText = t.cancel;
+      document.getElementById('btn-confirm-save').innerText = t.downloadSave;
+      
+      document.getElementById('txt-pdf-modal-title').innerText = t.pdfModalTitle;
+      document.getElementById('lbl-pdf-name').innerText = t.pdfNameLbl;
+      document.getElementById('lbl-pdf-orientation').innerText = t.pdfOrientationLbl;
+      document.getElementById('btn-cancel-pdf').innerText = t.cancel;
+      document.getElementById('btn-confirm-pdf').innerText = t.pdfConfirmBtn;
+
+      document.getElementById('txt-shortcuts-title').innerText = t.shortcutsTitle;
+      document.getElementById('txt-font-modal-title').innerText = t.fontModalTitle;
+      document.getElementById('txt-font-modal-body').innerHTML = t.fontModalBody;
+      document.getElementById('txt-icon-title').innerText = t.iconTitle;
+      document.getElementById('lbl-icon-cat1').innerText = t.iconCat1;
+      document.getElementById('lbl-icon-cat2').innerText = t.iconCat2;
+      document.getElementById('lbl-icon-cat3').innerText = t.iconCat3;
+      document.getElementById('btn-apply-custom-emoji').innerText = t.applyCustomEmoji;
+      document.getElementById('custom-emoji-input').placeholder = t.customEmojiPlaceholder;
+
+      // Deletion confirmation modal labels
+      document.getElementById('txt-del-modal-title').innerText = t.delModalTitle;
+      document.getElementById('txt-del-modal-desc').innerText = t.delModalDesc;
+      document.getElementById('btn-confirm-delete').innerText = t.delConfirmBtn;
+      document.getElementById('btn-cancel-delete').innerText = t.cancel;
+
+      // Context menu labels
+      document.getElementById('ctx-edit').innerText = t.ctxEdit;
+      document.getElementById('ctx-add-child').innerText = t.ctxAddChild;
+      document.getElementById('ctx-add-sibling').innerText = t.ctxAddSibling;
+      document.getElementById('ctx-icon').innerText = t.ctxIcon;
+      document.getElementById('ctx-remove-icon').innerText = t.ctxRemoveIcon;
+      document.getElementById('ctx-image').innerText = t.ctxImage;
+      document.getElementById('ctx-delete').innerText = t.ctxDelete;
+
+      const shortcutsList = document.getElementById('shortcuts-list-container');
+      shortcutsList.innerHTML = t.shortcuts.map(s => `
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--panel-border);">
+          <span style="font-size: 11px;">${s.name}</span>
+          <kbd style="padding: 2px 6px; font-size: 10px; font-family: monospace; border-radius: 6px; background: rgba(125,125,125,0.15); border: 1px solid var(--panel-border);">${s.key}</kbd>
+        </div>
+      `).join('');
+    }
+
+    function setLineStyle(style) {
+      state.lineStyle = style;
+      ['curved', 'stepped', 'straight'].forEach(s => {
+        const btn = document.getElementById(`btn-line-${s}`);
+        if (s === style) {
+          btn.style.backgroundColor = 'var(--panel-bg)';
+          btn.style.color = 'var(--text-main)';
+          btn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        } else {
+          btn.style.backgroundColor = 'transparent';
+          btn.style.color = 'var(--text-muted)';
+          btn.style.boxShadow = 'none';
+        }
+      });
+      renderConnections();
+      historyManager.push();
+      autoSave();
+    }
+
+    function toggleTheme() {
+      state.isDark = !state.isDark;
+      const html = document.documentElement;
+      const icon = document.getElementById('theme-icon');
+      
+      if (state.isDark) {
+        html.classList.add('dark');
+        icon.innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+      } else {
+        html.classList.remove('dark');
+        icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+      }
+      render();
+      autoSave();
+    }
+
+    /* =========================================================================
+       4. RENDERING PIPELINE (NODES & SVG CONNECTORS)
+       ========================================================================= */
+    function render() {
+      renderNodes();
+      requestAnimationFrame(renderConnections);
+      updateInspector();
+    }
+
+    function renderNodes() {
+      nodesContainer.innerHTML = '';
+      const isRTL = state.lang === 'fa';
+
+      state.nodes.forEach(node => {
+        const isSelected = state.selectedNodeId === node.id;
+        const isEditing = state.editingNodeId === node.id;
+        const nodeEl = document.createElement('div');
+        nodeEl.id = `node-${node.id}`;
+        
+        nodeEl.className = `mind-node ${isSelected ? 'selected' : ''} ${isEditing ? 'is-editing' : ''} ${node.isRoot ? 'root-node' : ''}`;
+        nodeEl.style.left = `${node.x}px`;
+        nodeEl.style.top = `${node.y}px`;
+
+        let contentHtml = '';
+
+        if (node.emoji) {
+          contentHtml += `
+            <div class="node-icon" style="font-size: 20px; margin-bottom: 4px; line-height: 1; pointer-events: none;">
+              ${node.emoji}
+            </div>
+          `;
+        }
+
+        if (node.image) {
+          contentHtml += `
+            <div class="node-img-wrapper" style="position: relative; width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 8px; max-height: 110px; cursor: zoom-in;" onclick="openFullscreenImageViewer('${node.image}', event)">
+              <img src="${node.image}" style="width: 100%; height: auto; object-fit: cover; pointer-events: none; display: block;" />
+              <button onclick="removeImage('${node.id}', event)" style="position: absolute; top: 4px; right: 4px; padding: 3px; background: rgba(0,0,0,0.7); border: none; border-radius: 50%; color: #fff; cursor: pointer;" title="Delete Image">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>`;
+        }
+
+        // Strict bidirectional RTL/LTR text enforcement
+        contentHtml += `
+          <div 
+            id="editor-${node.id}"
+            dir="${isRTL ? 'rtl' : 'ltr'}"
+            contenteditable="${isEditing ? 'true' : 'false'}" 
+            class="node-text-content"
+            style="direction: ${isRTL ? 'rtl' : 'ltr'} !important; ${isEditing ? 'cursor: text;' : 'pointer-events: none;'}"
+            data-placeholder="${state.lang === 'fa' ? 'عنوان شاخه...' : 'Node title...'}"
+            onblur="stopEditingNode('${node.id}', this)"
+            onkeydown="handleEditorKeyDown(event, '${node.id}', this)"
+          >${node.text}</div>
+        `;
+
+        nodeEl.innerHTML = contentHtml;
+
+        nodeEl.addEventListener('mousedown', (e) => onNodeMouseDown(e, node.id));
+        nodeEl.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          startEditingNode(node.id);
+        });
+
+        // Dedicated custom right-click context menu on node
+        nodeEl.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openContextMenu(node.id, e.clientX, e.clientY);
+        });
+
+        nodesContainer.appendChild(nodeEl);
+      });
+    }
+
+    function startEditingNode(id) {
+      closeContextMenu();
+      state.editingNodeId = id;
+      state.selectedNodeId = id;
+      render();
+
+      setTimeout(() => {
+        const textEl = document.getElementById(`editor-${id}`);
+        if (textEl) {
+          textEl.focus();
+          document.execCommand('selectAll', false, null);
+        }
+      }, 30);
+    }
+
+    function stopEditingNode(id, element) {
+      if (state.editingNodeId === id) {
+        const node = state.nodes.find(n => n.id === id);
+        if (node && node.text !== element.innerText) {
+          node.text = element.innerText;
+          historyManager.push();
+          autoLayoutBalancedTree(); // Auto balance immediately on text change
+        }
+        state.editingNodeId = null;
+        render();
+        resolveCollisionsSoft();
+        autoSave();
+      }
+    }
+
+    /**
+     * Handles keyboard events inside node editor:
+     * - ONLY Escape commits text and returns to node selection.
+     * - Enter and Shift+Enter insert newlines naturally.
+     */
+    function handleEditorKeyDown(e, id, element) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        element.blur();
+      }
+    }
+
+    function addChildNodeSmart() {
+      const parent = state.nodes.find(n => n.id === state.selectedNodeId) || state.nodes[0];
+      const newId = 'node-' + Date.now();
+
+      let isRight = true;
+      if (parent.isRoot) {
+        const directChildren = state.nodes.filter(n => n.parentId === parent.id);
+        let rightH = 0, leftH = 0;
+        directChildren.forEach(c => {
+          if (c.x >= 0) rightH += (document.getElementById(`node-${c.id}`)?.offsetHeight || 60) + 35;
+          else leftH += (document.getElementById(`node-${c.id}`)?.offsetHeight || 60) + 35;
+        });
+        isRight = rightH <= leftH;
+      } else {
+        isRight = parent.x >= 0;
+      }
+
+      const offsetX = isRight ? 260 : -260;
+      const children = state.nodes.filter(n => n.parentId === parent.id);
+      const offsetY = children.length * 80 - 15;
+
+      const colors = ['#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+      const newNode = {
+        id: newId,
+        parentId: parent.id,
+        text: i18n[state.lang].defaultNewChild,
+        x: parent.x + offsetX,
+        y: parent.y + offsetY,
+        color: parent.isRoot ? randomColor : parent.color,
+        emoji: null,
+        image: null
+      };
+
+      state.nodes.push(newNode);
+      state.selectedNodeId = newId;
+      autoLayoutBalancedTree(); // Auto balance immediately on new child
+      historyManager.push();
+      autoSave();
+
+      setTimeout(() => startEditingNode(newId), 50);
+    }
+
+    function addSiblingNode() {
+      const active = state.nodes.find(n => n.id === state.selectedNodeId);
+      if (!active || !active.parentId) {
+        addChildNodeSmart();
+        return;
+      }
+
+      const newId = 'node-' + Date.now();
+      const newNode = {
+        id: newId,
+        parentId: active.parentId,
+        text: i18n[state.lang].defaultNewSibling,
+        x: active.x,
+        y: active.y + 85,
+        color: active.color,
+        emoji: null,
+        image: null
+      };
+
+      state.nodes.push(newNode);
+      state.selectedNodeId = newId;
+      autoLayoutBalancedTree(); // Auto balance immediately on new sibling
+      historyManager.push();
+      autoSave();
+
+      setTimeout(() => startEditingNode(newId), 50);
+    }
+
+    /* =========================================================================
+       5. NODE DELETION & ROOT PROTECTION
+       ========================================================================= */
+    function requestDeleteNode(nodeId) {
+      if (!nodeId) return;
+      const target = state.nodes.find(n => n.id === nodeId);
+      if (target && target.isRoot) return; // Cannot delete root node
+
+      const hasChildren = state.nodes.some(n => n.parentId === nodeId);
+      if (hasChildren) {
+        state.pendingDeleteNodeId = nodeId;
+        deleteConfirmModal.classList.remove('hidden');
+      } else {
+        performDeleteNode(nodeId);
+      }
+    }
+
+    function closeDeleteConfirmModal() {
+      deleteConfirmModal.classList.add('hidden');
+      state.pendingDeleteNodeId = null;
+    }
+
+    function confirmDeleteWithChildren() {
+      if (state.pendingDeleteNodeId) {
+        performDeleteNode(state.pendingDeleteNodeId);
+        closeDeleteConfirmModal();
+      }
+    }
+
+    function performDeleteNode(nodeId) {
+      const toDelete = new Set([nodeId]);
+      let sizeBefore;
+      do {
+        sizeBefore = toDelete.size;
+        state.nodes.forEach(n => {
+          if (toDelete.has(n.parentId)) toDelete.add(n.id);
+        });
+      } while (toDelete.size !== sizeBefore);
+
+      state.nodes = state.nodes.filter(n => !toDelete.has(n.id));
+      state.selectedNodeId = 'root';
+      autoLayoutBalancedTree(); // Auto balance immediately on deletion
+      historyManager.push();
+      autoSave();
+    }
+
+    /* =========================================================================
+       6. CONTEXT MENU CONTROLLERS
+       ========================================================================= */
+    function openContextMenu(nodeId, x, y) {
+      state.contextNodeId = nodeId;
+      selectNode(nodeId);
+      
+      const node = state.nodes.find(n => n.id === nodeId);
+      const removeIconBtn = document.getElementById('ctx-remove-icon-btn');
+      const ctxDelBtn = document.getElementById('ctx-delete-btn');
+      const ctxDelDivider = document.getElementById('ctx-delete-divider');
+
+      if (node && node.emoji) {
+        removeIconBtn.classList.remove('hidden');
+      } else {
+        removeIconBtn.classList.add('hidden');
+      }
+
+      // Root node cannot be deleted: hide context delete option completely
+      if (node && node.isRoot) {
+        ctxDelBtn.classList.add('hidden');
+        ctxDelDivider.classList.add('hidden');
+      } else {
+        ctxDelBtn.classList.remove('hidden');
+        ctxDelDivider.classList.remove('hidden');
+      }
+
+      nodeContextMenu.style.left = `${Math.min(x, window.innerWidth - 200)}px`;
+      nodeContextMenu.style.top = `${Math.min(y, window.innerHeight - 260)}px`;
+      nodeContextMenu.classList.remove('hidden');
+    }
+
+    function closeContextMenu() {
+      nodeContextMenu.classList.add('hidden');
+      state.contextNodeId = null;
+    }
+
+    function contextAction(action) {
+      const nodeId = state.contextNodeId || state.selectedNodeId;
+      closeContextMenu();
+      if (!nodeId) return;
+
+      switch(action) {
+        case 'edit':
+          startEditingNode(nodeId);
+          break;
+        case 'add-child':
+          addChildNodeSmart();
+          break;
+        case 'add-sibling':
+          addSiblingNode();
+          break;
+        case 'icon':
+          openIconModal();
+          break;
+        case 'remove-icon':
+          setNodeEmoji('');
+          break;
+        case 'image':
+          document.getElementById('node-img-file-input').click();
+          break;
+        case 'delete':
+          requestDeleteNode(nodeId);
+          break;
+      }
+    }
+
+    /* =========================================================================
+       7. MATHEMATICAL SYMMETRICAL TREE AUTO-LAYOUT (BUZAN'S CLOCKWISE PRINCIPLE)
+       ========================================================================= */
+    function autoLayoutBalancedTree() {
+      const root = state.nodes.find(n => n.isRoot) || state.nodes[0];
+      root.x = 0;
+      root.y = 0;
+
+      const rootEl = document.getElementById(`node-${root.id}`);
+      const rootW = rootEl ? rootEl.offsetWidth : 180;
+      const rootH = rootEl ? rootEl.offsetHeight : 65;
+
+      const gapX = 100;
+      const gapY = 35;
+
+      // Recursive function to calculate vertical bounding height of any subtree
+      function getSubtreeHeight(nodeId) {
+        const children = state.nodes.filter(n => n.parentId === nodeId);
+        const el = document.getElementById(`node-${nodeId}`);
+        const selfH = el ? el.offsetHeight : 60;
+        
+        if (children.length === 0) {
+          return selfH;
+        }
+        const childrenTotalH = children.reduce((sum, c) => sum + getSubtreeHeight(c.id), 0) + (children.length - 1) * gapY;
+        return Math.max(selfH, childrenTotalH);
+      }
+
+      // Direct children of root in strict sequential creation order
+      const directChildren = state.nodes.filter(n => n.parentId === root.id);
+      const total = directChildren.length;
+
+      let rightChildren = [];
+      let leftChildren = [];
+
+      if (total === 1) {
+        rightChildren = [directChildren[0]];
+      } else if (total > 1) {
+        // Sequential partition: find cut point k (1 <= k < total) that minimizes height difference
+        // while preserving 100% strict clockwise rotation order
+        const branchHeights = directChildren.map(c => getSubtreeHeight(c.id));
+        let bestK = Math.ceil(total / 2);
+        let minDiff = Infinity;
+
+        for (let k = 1; k < total; k++) {
+          const rH = branchHeights.slice(0, k).reduce((a, b) => a + b, 0) + (k - 1) * gapY;
+          const lH = branchHeights.slice(k).reduce((a, b) => a + b, 0) + (total - k - 1) * gapY;
+          const diff = Math.abs(rH - lH);
+
+          if (diff < minDiff) {
+            minDiff = diff;
+            bestK = k;
+          } else if (diff === minDiff) {
+            if (Math.abs(k - total / 2) < Math.abs(bestK - total / 2)) {
+              bestK = k;
+            }
+          }
+        }
+
+        // 1. Right Side (Top -> Bottom: 1 o'clock to 5 o'clock)
+        rightChildren = directChildren.slice(0, bestK);
+        // 2. Left Side (Bottom -> Top: 7 o'clock to 11 o'clock, reversed for top-to-bottom layout column)
+        leftChildren = directChildren.slice(bestK).reverse();
+      }
+
+      // Recursive placement centered exactly around parent's vertical center (pCenterY)
+      function layoutBranchRecursive(parentId, isRight) {
+        const parent = state.nodes.find(n => n.id === parentId);
+        const parentEl = document.getElementById(`node-${parent.id}`);
+        const pW = parentEl ? parentEl.offsetWidth : 160;
+        const pH = parentEl ? parentEl.offsetHeight : 60;
+        const pCenterY = parent.y + pH / 2;
+
+        let children = [];
+        if (parentId === root.id) {
+          children = isRight ? rightChildren : leftChildren;
+        } else {
+          children = state.nodes.filter(n => n.parentId === parentId);
+        }
+
+        if (children.length === 0) return;
+
+        const totalBlockH = children.reduce((sum, c) => sum + getSubtreeHeight(c.id), 0) + (children.length - 1) * gapY;
+        const blockStartY = pCenterY - totalBlockH / 2;
+
+        let curY = blockStartY;
+        children.forEach(child => {
+          const subH = getSubtreeHeight(child.id);
+          const childEl = document.getElementById(`node-${child.id}`);
+          const cW = childEl ? childEl.offsetWidth : 160;
+          const cH = childEl ? childEl.offsetHeight : 60;
+
+          const cCenterY = curY + subH / 2;
+          child.y = cCenterY - cH / 2;
+
+          if (parentId === root.id) {
+            child.x = isRight ? (root.x + rootW + gapX) : (root.x - cW - gapX);
+          } else {
+            child.x = isRight ? (parent.x + pW + gapX) : (parent.x - cW - gapX);
+          }
+
+          layoutBranchRecursive(child.id, isRight);
+          curY += subH + gapY;
+        });
+      }
+
+      layoutBranchRecursive(root.id, true);
+      layoutBranchRecursive(root.id, false);
+
+      render();
+      resetZoom();
+      autoSave();
+    }
+
+    function resolveCollisionsSoft() {
+      const marginY = 25;
+      let changed = false;
+
+      for (let i = 0; i < state.nodes.length; i++) {
+        for (let j = i + 1; j < state.nodes.length; j++) {
+          const a = state.nodes[i];
+          const b = state.nodes[j];
+          if (a.isRoot || b.isRoot) continue;
+
+          const elA = document.getElementById(`node-${a.id}`);
+          const elB = document.getElementById(`node-${b.id}`);
+          if (!elA || !elB) continue;
+
+          const wA = elA.offsetWidth;
+          const hA = elA.offsetHeight;
+          const wB = elB.offsetWidth;
+          const hB = elB.offsetHeight;
+
+          const overlapX = Math.abs((a.x + wA / 2) - (b.x + wB / 2)) < (wA / 2 + wB / 2 + 20);
+          const overlapY = Math.abs((a.y + hA / 2) - (b.y + hB / 2)) < (hA / 2 + hB / 2 + marginY);
+
+          if (overlapX && overlapY) {
+            if (a.y <= b.y) {
+              b.y = a.y + hA + marginY;
+            } else {
+              a.y = b.y + hB + marginY;
+            }
+            changed = true;
+          }
+        }
+      }
+
+      if (changed) {
+        state.nodes.forEach(node => {
+          const el = document.getElementById(`node-${node.id}`);
+          if (el) {
+            el.style.left = `${node.x}px`;
+            el.style.top = `${node.y}px`;
+          }
+        });
+        renderConnections();
+      }
+    }
+
+    function getSvgLinesMarkup() {
+      const paths = [];
+
+      state.nodes.forEach(node => {
+        if (!node.parentId) return;
+        const parent = state.nodes.find(n => n.id === node.parentId);
+        if (!parent) return;
+
+        const parentEl = document.getElementById(`node-${parent.id}`);
+        const childEl = document.getElementById(`node-${node.id}`);
+
+        const pW = parentEl ? parentEl.offsetWidth : 160;
+        const pH = parentEl ? parentEl.offsetHeight : 55;
+        const cW = childEl ? childEl.offsetWidth : 160;
+        const cH = childEl ? childEl.offsetHeight : 55;
+
+        const isChildRight = node.x > parent.x;
+        const startX = isChildRight ? parent.x + pW : parent.x;
+        const startY = parent.y + pH / 2;
+        const endX = isChildRight ? node.x : node.x + cW;
+        const endY = node.y + cH / 2;
+
+        let pathD = '';
+        if (state.lineStyle === 'curved') {
+          const dx = Math.abs(endX - startX) * 0.5;
+          const cp1x = isChildRight ? startX + dx : startX - dx;
+          const cp2x = isChildRight ? endX - dx : endX + dx;
+          pathD = `M ${startX} ${startY} C ${cp1x} ${startY}, ${cp2x} ${endY}, ${endX} ${endY}`;
+        } else if (state.lineStyle === 'stepped') {
+          const midX = (startX + endX) / 2;
+          pathD = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
+        } else {
+          pathD = `M ${startX} ${startY} L ${endX} ${endY}`;
+        }
+
+        const color = node.color || '#0ea5e9';
+        paths.push(`
+          <g>
+            <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" opacity="0.9" />
+            <circle cx="${startX}" cy="${startY}" r="3.5" fill="${color}" />
+            <circle cx="${endX}" cy="${endY}" r="3.5" fill="${color}" />
+          </g>
+        `);
+      });
+
+      return paths.join('');
+    }
+
+    function renderConnections() {
+      svgLayer.innerHTML = getSvgLinesMarkup();
+    }
+
+    function updateTransform() {
+      canvas.style.transform = `translate(${state.transform.x}px, ${state.transform.y}px) scale(${state.transform.scale})`;
+      document.getElementById('zoom-level').innerText = `${Math.round(state.transform.scale * 100)}%`;
+    }
+
+    function resetZoom() {
+      const root = state.nodes.find(n => n.isRoot) || state.nodes[0];
+      const rootEl = document.getElementById(`node-${root.id}`);
+      const rw = rootEl ? rootEl.offsetWidth : 180;
+      const rh = rootEl ? rootEl.offsetHeight : 65;
+      
+      state.transform.x = (window.innerWidth / 2) - (root.x + rw / 2);
+      state.transform.y = (window.innerHeight / 2) - (root.y + rh / 2);
+      state.transform.scale = 1;
+      updateTransform();
+    }
+
+    function navigateNodes(direction) {
+      if (!state.selectedNodeId) {
+        selectNode('root');
+        return;
+      }
+      const current = state.nodes.find(n => n.id === state.selectedNodeId);
+      if (!current) return;
+
+      let bestNode = null;
+      let minDistance = Infinity;
+
+      state.nodes.forEach(target => {
+        if (target.id === current.id) return;
+        const dx = target.x - current.x;
+        const dy = target.y - current.y;
+
+        let isValidDirection = false;
+        if (direction === 'right' && dx > 40) isValidDirection = true;
+        if (direction === 'left' && dx < -40) isValidDirection = true;
+        if (direction === 'down' && dy > 30) isValidDirection = true;
+        if (direction === 'up' && dy < -30) isValidDirection = true;
+
+        if (isValidDirection) {
+          const dist = Math.hypot(dx, dy);
+          if (dist < minDistance) {
+            minDistance = dist;
+            bestNode = target;
+          }
+        }
+      });
+
+      if (bestNode) selectNode(bestNode.id);
+    }
+
+    /* =========================================================================
+       8. INTERACTION EVENT LISTENERS & HOTKEYS
+       ========================================================================= */
+    function setupEventListeners() {
+      viewport.addEventListener('mousedown', (e) => {
+        if (e.target === viewport || e.target === svgLayer || e.target === canvas) {
+          state.isPanning = true;
+          state.panStart = { x: e.clientX - state.transform.x, y: e.clientY - state.transform.y };
+          state.selectedNodeId = null;
+          state.editingNodeId = null;
+          closeContextMenu();
+          updateInspector();
+          renderNodes();
+        }
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (state.isPanning) {
+          state.transform.x = e.clientX - state.panStart.x;
+          state.transform.y = e.clientY - state.panStart.y;
+          updateTransform();
+        } else if (draggingNodeId) {
+          const node = state.nodes.find(n => n.id === draggingNodeId);
+          if (node) {
+            const rawTargetX = (e.clientX - state.transform.x) / state.transform.scale - dragOffset.x;
+            const rawTargetY = (e.clientY - state.transform.y) / state.transform.scale - dragOffset.y;
+
+            if (node.parentId) {
+              const parent = state.nodes.find(n => n.id === node.parentId);
+              if (parent) {
+                node.x = Math.max(parent.x - 550, Math.min(parent.x + 550, rawTargetX));
+                node.y = Math.max(parent.y - 400, Math.min(parent.y + 400, rawTargetY));
+              }
+            } else {
+              node.x = Math.max(-600, Math.min(600, rawTargetX));
+              node.y = Math.max(-500, Math.min(500, rawTargetY));
+            }
+            
+            const nodeEl = document.getElementById(`node-${node.id}`);
+            if (nodeEl) {
+              nodeEl.style.left = `${node.x}px`;
+              nodeEl.style.top = `${node.y}px`;
+            }
+            renderConnections();
+          }
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        state.isPanning = false;
+        if (draggingNodeId) {
+          draggingNodeId = null;
+          resolveCollisionsSoft();
+          historyManager.push();
+          autoSave();
+        }
+      });
+
+      viewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomDelta = 0.08;
+        let newScale = state.transform.scale * (e.deltaY < 0 ? (1 + zoomDelta) : (1 - zoomDelta));
+        newScale = Math.min(Math.max(0.25, newScale), 2.5);
+
+        const mouseX = e.clientX - state.transform.x;
+        const mouseY = e.clientY - state.transform.y;
+
+        state.transform.x -= (mouseX * (newScale / state.transform.scale - 1));
+        state.transform.y -= (mouseY * (newScale / state.transform.scale - 1));
+        state.transform.scale = newScale;
+
+        updateTransform();
+      }, { passive: false });
+
+      // Keyboard Shortcut Dispatcher
+      window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          if (e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            openSaveModal();
+            return;
+          }
+          if (e.key.toLowerCase() === 'p') {
+            e.preventDefault();
+            openPdfModal();
+            return;
+          }
+          if (e.key.toLowerCase() === 'z') {
+            e.preventDefault();
+            if (e.shiftKey) redo();
+            else undo();
+            return;
+          }
+          if (e.key.toLowerCase() === 'y') {
+            e.preventDefault();
+            redo();
+            return;
+          }
+          if (e.key.toLowerCase() === 'd') {
+            e.preventDefault();
+            toggleTheme();
+            return;
+          }
+          if (e.key.toLowerCase() === 'i') {
+            e.preventDefault();
+            openIconModal();
+            return;
+          }
+          if (e.key.toLowerCase() === 'u') {
+            e.preventDefault();
+            return;
+          }
+        }
+
+        if (e.altKey && e.key.toLowerCase() === 'x') {
+          e.preventDefault();
+          setNodeEmoji('');
+          return;
+        }
+
+        if (state.editingNodeId) return;
+
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          addChildNodeSmart();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (e.shiftKey) addSiblingNode();
+          else if (state.selectedNodeId) startEditingNode(state.selectedNodeId);
+        } else if (e.key === 'F2') {
+          e.preventDefault();
+          if (state.selectedNodeId) startEditingNode(state.selectedNodeId);
+        } else if (e.key === 'Delete' || e.key === 'Backspace') {
+          requestDeleteNode(state.selectedNodeId);
+        } else if (e.key === 'ArrowRight') {
+          navigateNodes('right');
+        } else if (e.key === 'ArrowLeft') {
+          navigateNodes('left');
+        } else if (e.key === 'ArrowUp') {
+          navigateNodes('up');
+        } else if (e.key === 'ArrowDown') {
+          navigateNodes('down');
+        } else if (e.key === '?' || e.key === 'F1') {
+          openShortcutsModal();
+        } else if (e.key === 'Escape') {
+          closeIconModal();
+          closeShortcutsModal();
+          closeSaveModal();
+          closePdfModal();
+          closeImageViewer();
+          closeFontInfoModal();
+          closeDeleteConfirmModal();
+          closeContextMenu();
+        }
+      });
+    }
+
+    function onNodeMouseDown(e, id) {
+      if (e.target.closest('button') || e.target.tagName === 'INPUT') return;
+      if (state.editingNodeId === id) return;
+      if (e.button === 2) return;
+      
+      selectNode(id);
+      draggingNodeId = id;
+      const node = state.nodes.find(n => n.id === id);
+      
+      const mouseCanvasX = (e.clientX - state.transform.x) / state.transform.scale;
+      const mouseCanvasY = (e.clientY - state.transform.y) / state.transform.scale;
+      
+      dragOffset = {
+        x: mouseCanvasX - node.x,
+        y: mouseCanvasY - node.y
+      };
+      e.stopPropagation();
+    }
+
+    function selectNode(id) {
+      state.selectedNodeId = id;
+      document.querySelectorAll('.mind-node').forEach(el => el.classList.remove('selected'));
+      const el = document.getElementById(`node-${id}`);
+      if (el) el.classList.add('selected');
+      updateInspector();
+
+      // Root node protection: disable top delete button
+      const node = state.nodes.find(n => n.id === id);
+      const deleteBtn = document.getElementById('btn-delete-node');
+      if (node && node.isRoot) {
+        deleteBtn.style.opacity = '0.3';
+        deleteBtn.style.pointerEvents = 'none';
+      } else {
+        deleteBtn.style.opacity = '1';
+        deleteBtn.style.pointerEvents = 'auto';
+      }
+    }
+
+    function updateInspector() {
+      if (state.selectedNodeId) inspector.classList.remove('hidden');
+      else inspector.classList.add('hidden');
+    }
+
+    function setNodeColor(color) {
+      const node = state.nodes.find(n => n.id === state.selectedNodeId);
+      if (node) {
+        node.color = color;
+        render();
+        historyManager.push();
+        autoSave();
+      }
+    }
+
+    function openIconModal() { iconModal.classList.remove('hidden'); }
+    function closeIconModal() { iconModal.classList.add('hidden'); }
+    function openShortcutsModal() { shortcutsModal.classList.remove('hidden'); }
+    function closeShortcutsModal() { shortcutsModal.classList.add('hidden'); }
+    function openFontInfoModal() { fontInfoModal.classList.remove('hidden'); }
+    function closeFontInfoModal() { fontInfoModal.classList.add('hidden'); }
+
+    function selectEmoji(emoji) {
+      const node = state.nodes.find(n => n.id === state.selectedNodeId);
+      if (node) {
+        node.emoji = emoji;
+        autoLayoutBalancedTree();
+        historyManager.push();
+        autoSave();
+      }
+      closeIconModal();
+    }
+
+    function setNodeEmoji(emoji) {
+      const node = state.nodes.find(n => n.id === state.selectedNodeId);
+      if (node) {
+        node.emoji = emoji;
+        autoLayoutBalancedTree();
+        historyManager.push();
+        autoSave();
+      }
+    }
+
+    function applyCustomEmoji() {
+      const input = document.getElementById('custom-emoji-input');
+      const val = input.value.trim();
+      if (val) {
+        selectEmoji(val);
+        input.value = '';
+      }
+    }
+
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const node = state.nodes.find(n => n.id === state.selectedNodeId);
+        if (node) {
+          node.image = event.target.result;
+          setTimeout(() => {
+            autoLayoutBalancedTree();
+            historyManager.push();
+            autoSave();
+          }, 50);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeImage(nodeId, event) {
+      event.stopPropagation();
+      const node = state.nodes.find(n => n.id === nodeId);
+      if (node) {
+        node.image = null;
+        setTimeout(() => {
+          autoLayoutBalancedTree();
+          historyManager.push();
+          autoSave();
+        }, 50);
+      }
+    }
+
+    /* =========================================================================
+       9. FULLSCREEN LIGHTBOX
+       ========================================================================= */
+    function openFullscreenImageViewer(imgSrc, event) {
+      if (event) event.stopPropagation();
+      viewerState.imgSrc = imgSrc;
+      viewerState.scale = 1;
+      viewerState.x = 0;
+      viewerState.y = 0;
+      viewerImgTarget.src = imgSrc;
+      updateViewerTransform();
+      imageViewerModal.classList.remove('hidden');
+    }
+
+    function closeImageViewer() {
+      imageViewerModal.classList.add('hidden');
+      viewerState.imgSrc = null;
+    }
+
+    function updateViewerTransform() {
+      viewerImgTarget.style.transform = `translate(${viewerState.x}px, ${viewerState.y}px) scale(${viewerState.scale})`;
+      document.getElementById('viewer-scale-text').innerText = `${Math.round(viewerState.scale * 100)}%`;
+    }
+
+    function zoomViewerStep(factor) {
+      viewerState.scale = Math.min(Math.max(0.2, viewerState.scale * factor), 5);
+      updateViewerTransform();
+    }
+
+    function resetViewerTransform() {
+      viewerState.scale = 1;
+      viewerState.x = 0;
+      viewerState.y = 0;
+      updateViewerTransform();
+    }
+
+    function downloadActiveViewerImage() {
+      if (!viewerState.imgSrc) return;
+      const a = document.createElement('a');
+      a.href = viewerState.imgSrc;
+      a.download = `MindMap-Image-${Date.now()}.png`;
+      a.click();
+    }
+
+    function setupImageViewerEvents() {
+      viewerStage.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 1.15 : 0.85;
+        viewerState.scale = Math.min(Math.max(0.2, viewerState.scale * delta), 5);
+        updateViewerTransform();
+      }, { passive: false });
+
+      viewerStage.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button')) return;
+        viewerState.isDragging = true;
+        viewerState.startX = e.clientX - viewerState.x;
+        viewerState.startY = e.clientY - viewerState.y;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (viewerState.isDragging) {
+          viewerState.x = e.clientX - viewerState.startX;
+          viewerState.y = e.clientY - viewerState.startY;
+          updateViewerTransform();
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        viewerState.isDragging = false;
+      });
+
+      viewerStage.addEventListener('dblclick', () => {
+        viewerState.scale = viewerState.scale === 1 ? 2.5 : 1;
+        viewerState.x = 0;
+        viewerState.y = 0;
+        updateViewerTransform();
+      });
+    }
+
+    /* =========================================================================
+       10. ENCRYPTED PROJECT PERSISTENCE (.PMM)
+       ========================================================================= */
+    function openSaveModal() {
+      const root = state.nodes.find(n => n.isRoot);
+      const safeName = root ? root.text.split('\n')[0].replace(/[^a-zA-Z0-9_\u0600-\u06FF]/g, '_') : 'My_MindMap';
+      document.getElementById('input-project-name').value = safeName || 'My_MindMap';
+      saveProjectModal.classList.remove('hidden');
+    }
+
+    function closeSaveModal() {
+      saveProjectModal.classList.add('hidden');
+    }
+
+    function confirmSaveEncryptedProject() {
+      const rawName = document.getElementById('input-project-name').value.trim() || 'My_MindMap';
+      const projectPayload = {
+        app: "ProMindMapStudio",
+        version: '2.0',
+        savedAt: new Date().toISOString(),
+        nodes: state.nodes,
+        lineStyle: state.lineStyle,
+        lang: state.lang,
+        isDark: state.isDark
+      };
+
+      const encryptedText = encryptPayload(projectPayload);
+      const blob = new Blob([encryptedText], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${rawName}.pmm`;
+      link.click();
+      URL.revokeObjectURL(url);
+      closeSaveModal();
+    }
+
+    function loadProjectFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const decrypted = decryptPayload(e.target.result);
+          if (decrypted.nodes && Array.isArray(decrypted.nodes)) {
+            state.nodes = decrypted.nodes;
+            if (decrypted.lineStyle) state.lineStyle = decrypted.lineStyle;
+            if (decrypted.lang) {
+              state.lang = decrypted.lang;
+              applyLanguage(decrypted.lang);
+            }
+            if (typeof decrypted.isDark === 'boolean') {
+              state.isDark = decrypted.isDark;
+              if (state.isDark) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+              } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-icon').innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+              }
+            }
+            historyManager.push();
+            render();
+            resetZoom();
+            autoSave();
+          } else {
+            alert('Invalid project structure!');
+          }
+        } catch (err) {
+          alert('Failed to decrypt and open file: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function zoomIn() {
+      state.transform.scale = Math.min(2.5, state.transform.scale + 0.15);
+      updateTransform();
+    }
+    function zoomOut() {
+      state.transform.scale = Math.max(0.25, state.transform.scale - 0.15);
+      updateTransform();
+    }
+
+    /* =========================================================================
+       11. PIXEL-PERFECT NATIVE CANVAS RENDERER & PDF EXPORT
+       ========================================================================= */
+    function drawCanvasRoundedRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    /**
+     * Accurately rasterizes the live map using exact relative DOM coordinates.
+     * Guarantees 100% fidelity matching the screen view with strict RTL/LTR support.
+     */
+    async function renderHighResMindMapCanvas() {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      state.nodes.forEach(n => {
+        const el = document.getElementById(`node-${n.id}`);
+        const w = el ? el.offsetWidth : 160;
+        const h = el ? el.offsetHeight : 60;
+        minX = Math.min(minX, n.x);
+        minY = Math.min(minY, n.y);
+        maxX = Math.max(maxX, n.x + w);
+        maxY = Math.max(maxY, n.y + h);
+      });
+
+      const margin = 120;
+      const contentW = maxX - minX;
+      const contentH = maxY - minY;
+      const totalW = contentW + margin * 2;
+      const totalH = contentH + margin * 2;
+
+      const dpr = 2.5;
+      const canvasOffscreen = document.createElement('canvas');
+      canvasOffscreen.width = totalW * dpr;
+      canvasOffscreen.height = totalH * dpr;
+      const ctx = canvasOffscreen.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      // Solid canvas background
+      ctx.fillStyle = state.isDark ? '#09090b' : '#fafafa';
+      ctx.fillRect(0, 0, totalW, totalH);
+
+      // Engineering grid dots
+      ctx.fillStyle = state.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.06)';
+      for (let gx = 0; gx < totalW; gx += 24) {
+        for (let gy = 0; gy < totalH; gy += 24) {
+          ctx.beginPath();
+          ctx.arc(gx, gy, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Render connector paths
+      state.nodes.forEach(node => {
+        if (!node.parentId) return;
+        const parent = state.nodes.find(n => n.id === node.parentId);
+        if (!parent) return;
+
+        const parentEl = document.getElementById(`node-${parent.id}`);
+        const childEl = document.getElementById(`node-${node.id}`);
+        const pW = parentEl ? parentEl.offsetWidth : 160;
+        const pH = parentEl ? parentEl.offsetHeight : 55;
+        const cW = childEl ? childEl.offsetWidth : 160;
+        const cH = childEl ? childEl.offsetHeight : 55;
+
+        const pX = parent.x - minX + margin;
+        const pY = parent.y - minY + margin;
+        const cX = node.x - minX + margin;
+        const cY = node.y - minY + margin;
+
+        const isChildRight = cX > pX;
+        const startX = isChildRight ? pX + pW : pX;
+        const startY = pY + pH / 2;
+        const endX = isChildRight ? cX : cX + cW;
+        const endY = cY + cH / 2;
+
+        const color = node.color || '#0ea5e9';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        if (state.lineStyle === 'curved') {
+          const dx = Math.abs(endX - startX) * 0.5;
+          const cp1x = isChildRight ? startX + dx : startX - dx;
+          const cp2x = isChildRight ? endX - dx : endX + dx;
+          ctx.bezierCurveTo(cp1x, startY, cp2x, endY, endX, endY);
+        } else if (state.lineStyle === 'stepped') {
+          const midX = (startX + endX) / 2;
+          ctx.lineTo(midX, startY);
+          ctx.lineTo(midX, endY);
+          ctx.lineTo(endX, endY);
+        } else {
+          ctx.lineTo(endX, endY);
+        }
+        ctx.stroke();
+
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(startX, startY, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(endX, endY, 3.5, 0, Math.PI * 2); ctx.fill();
+      });
+
+      // Render nodes using live relative geometry matching the DOM exactly
+      const zoom = state.transform.scale;
+      const isRTL = state.lang === 'fa';
+
+      for (const node of state.nodes) {
+        const el = document.getElementById(`node-${node.id}`);
+        if (!el) continue;
+
+        const nodeRect = el.getBoundingClientRect();
+        const nw = nodeRect.width / zoom;
+        const nh = nodeRect.height / zoom;
+        const nx = node.x - minX + margin;
+        const ny = node.y - minY + margin;
+
+        // Draw node card background & border
+        ctx.fillStyle = state.isDark ? '#18181b' : '#ffffff';
+        ctx.strokeStyle = node.isRoot ? (node.color || '#0ea5e9') : (state.isDark ? '#27272a' : '#e4e4e7');
+        ctx.lineWidth = node.isRoot ? 2 : 1.5;
+
+        drawCanvasRoundedRect(ctx, nx, ny, nw, nh, 14);
+        ctx.fill();
+        ctx.stroke();
+
+        // Render emoji with exact relative position
+        const iconEl = el.querySelector('.node-icon');
+        if (iconEl && node.emoji) {
+          const iconRect = iconEl.getBoundingClientRect();
+          const relX = (iconRect.left - nodeRect.left + iconRect.width / 2) / zoom;
+          const relY = (iconRect.top - nodeRect.top + iconRect.height * 0.8) / zoom;
+          ctx.font = '20px system-ui, -apple-system, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.direction = isRTL ? 'rtl' : 'ltr';
+          ctx.fillStyle = state.isDark ? '#f4f4f5' : '#09090b';
+          ctx.fillText(node.emoji, nx + relX, ny + relY);
+        }
+
+        // Render image with exact relative geometry
+        const imgEl = el.querySelector('.node-img-wrapper img');
+        if (imgEl && node.image) {
+          const imgRect = imgEl.getBoundingClientRect();
+          const relX = (imgRect.left - nodeRect.left) / zoom;
+          const relY = (imgRect.top - nodeRect.top) / zoom;
+          const relW = imgRect.width / zoom;
+          const relH = imgRect.height / zoom;
+
+          await new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              ctx.save();
+              drawCanvasRoundedRect(ctx, nx + relX, ny + relY, relW, relH, 8);
+              ctx.clip();
+              ctx.drawImage(img, nx + relX, ny + relY, relW, relH);
+              ctx.restore();
+              resolve();
+            };
+            img.onerror = resolve;
+            img.src = node.image;
+          });
+        }
+
+        // Render text with strict language direction & typography
+        const textEl = el.querySelector('.node-text-content');
+        if (textEl) {
+          const textRect = textEl.getBoundingClientRect();
+          const relX = (textRect.left - nodeRect.left + textRect.width / 2) / zoom;
+          let curTextY = (textRect.top - nodeRect.top + 13) / zoom;
+
+          ctx.font = '600 13px system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.direction = isRTL ? 'rtl' : 'ltr'; // Strict RTL/LTR enforcement
+          ctx.fillStyle = state.isDark ? '#f4f4f5' : '#09090b';
+
+          const lines = (node.text || '').split('\n');
+          lines.forEach(line => {
+            ctx.fillText(line, nx + relX, ny + curTextY);
+            curTextY += 19;
+          });
+        }
+      }
+
+      return canvasOffscreen;
+    }
+
+    async function exportAsImage() {
+      try {
+        const canvasObj = await renderHighResMindMapCanvas();
+        const link = document.createElement('a');
+        link.download = `MindMap-${Date.now()}.png`;
+        link.href = canvasObj.toDataURL('image/png', 1.0);
+        link.click();
+      } catch (err) {
+        alert('Error generating image export: ' + err.message);
+      }
+    }
+
+    /* =========================================================================
+       12. CUSTOM PDF EXPORT MODAL & GENERATOR
+       ========================================================================= */
+    function openPdfModal() {
+      const root = state.nodes.find(n => n.isRoot);
+      const safeName = root ? root.text.split('\n')[0].replace(/[^a-zA-Z0-9_\u0600-\u06FF]/g, '_') : 'MindMap_Document';
+      document.getElementById('input-pdf-name').value = safeName || 'MindMap_Document';
+      pdfExportModal.classList.remove('hidden');
+    }
+
+    function closePdfModal() {
+      pdfExportModal.classList.add('hidden');
+    }
+
+    /**
+     * Compiles canvas into a pure PDF 1.4 binary stream completely client-side.
+     * Uses DCTDecode to embed raw JPEG bytes without needing external PDF libraries.
+     */
+    async function confirmExportPdf() {
+      const rawName = document.getElementById('input-pdf-name').value.trim() || 'MindMap_Document';
+      const orientationVal = document.getElementById('select-pdf-orientation').value;
+      closePdfModal();
+
+      try {
+        const canvasObj = await renderHighResMindMapCanvas();
+        const jpegDataUrl = canvasObj.toDataURL('image/jpeg', 0.95);
+        const rawBase64 = jpegDataUrl.split(',')[1];
+        const binaryJpeg = atob(rawBase64);
+        const jpegLen = binaryJpeg.length;
+
+        // Determine orientation
+        let isLandscape = canvasObj.width >= canvasObj.height;
+        if (orientationVal === 'landscape') isLandscape = true;
+        else if (orientationVal === 'portrait') isLandscape = false;
+
+        const pageW = isLandscape ? 841.89 : 595.28;
+        const pageH = isLandscape ? 595.28 : 841.89;
+
+        const imgRatio = Math.min((pageW - 40) / canvasObj.width, (pageH - 40) / canvasObj.height);
+        const drawW = canvasObj.width * imgRatio;
+        const drawH = canvasObj.height * imgRatio;
+        const posX = (pageW - drawW) / 2;
+        const posY = (pageH - drawH) / 2;
+
+        const contentStream = `q ${drawW.toFixed(2)} 0 0 ${drawH.toFixed(2)} ${posX.toFixed(2)} ${posY.toFixed(2)} cm /Img1 Do Q`;
+
+        let pdfString = `%PDF-1.4\n`;
+        const offsets = [];
+
+        function addObj(str) {
+          offsets.push(pdfString.length);
+          pdfString += str + `\n`;
+        }
+
+        addObj(`1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj`);
+        addObj(`2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj`);
+        addObj(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW.toFixed(2)} ${pageH.toFixed(2)}] /Resources << /XObject << /Img1 4 0 R >> >> /Contents 5 0 R >>\nendobj`);
+
+        offsets.push(pdfString.length);
+        pdfString += `4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${canvasObj.width} /Height ${canvasObj.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegLen} >>\nstream\n`;
+        pdfString += binaryJpeg;
+        pdfString += `\nendstream\nendobj\n`;
+
+        addObj(`5 0 obj\n<< /Length ${contentStream.length} >>\nstream\n${contentStream}\nendstream\nendobj`);
+
+        const startXref = pdfString.length;
+        pdfString += `xref\n0 6\n0000000000 65535 f \n`;
+        offsets.forEach(off => {
+          pdfString += String(off).padStart(10, '0') + ` 00000 n \n`;
+        });
+        pdfString += `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${startXref}\n%%EOF`;
+
+        const pdfBytes = new Uint8Array(pdfString.length);
+        for (let i = 0; i < pdfString.length; i++) {
+          pdfBytes[i] = pdfString.charCodeAt(i) & 0xff;
+        }
+
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.download = `${rawName}.pdf`;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        URL.revokeObjectURL(link.href);
+      } catch (err) {
+        alert('Error generating PDF export: ' + err.message);
+      }
+    }
+
+    // Launch application initialization on DOM ready
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
